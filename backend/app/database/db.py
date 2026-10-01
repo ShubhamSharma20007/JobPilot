@@ -11,7 +11,7 @@ CONNECTION_STRING = (
 
 
 engine = create_engine(CONNECTION_STRING,pool_pre_ping=True,echo=True)
-print(engine.url.render_as_string(hide_password=True))
+# print(engine.url.render_as_string(hide_password=True))
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
