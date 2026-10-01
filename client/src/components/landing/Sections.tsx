@@ -1,4 +1,3 @@
-import { ArrowUp, ChevronDown } from "lucide-react"
 import { DemoMedia } from "./DemoMedia"
 import { FlowRow } from "./Diagram"
 import { APP, FAQ, FEATURES, FLOW, FLOW_V2, STEPS } from "./Content"
@@ -8,8 +7,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { ArrowUp } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { SocialLinks } from "./SocialLinks"
-import { Button } from "../ui/button"
 export function Hero() {
   return (
     <section id="top" className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 lg:grid-cols-2 lg:py-28">
@@ -124,7 +124,7 @@ export function Footer() {
           © {new Date().getFullYear()} {APP.name}
         </p>
         <div className="flex items-center gap-1">
-          <SocialLinks className="flex" />
+          <SocialLinks  />
           <Button
             variant="outline"
             size="icon"

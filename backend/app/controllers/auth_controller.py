@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from google.oauth2 import id_token
@@ -11,7 +11,7 @@ from config.config import config
 from models.user_model import User
 from schemas.user_schema import UserResponse
 from utils.jwt import create_access_token
-
+import uuid
 
 def _verify_google_token(token: str) -> dict:
     try:
@@ -79,4 +79,48 @@ def google_verify(token: str, db: Session) -> JSONResponse:
         content=jsonable_encoder(UserResponse.model_validate(user))
     )
     response.set_cookie(**COOKIE_OPTIONS, value=access_token)
+    return response
+
+def currentUser(req: Request, db: Session):
+    try:
+        user_id = uuid.UUID(req.state.user_id)
+    except (ValueError, AttributeError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing user",
+        )
+
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    return UserResponse.model_validate(user).model_dump(
+        mode="json",
+        exclude={"updated_at","created_at"}, 
+    )
+
+def logout():
+    response =  JSONResponse(
+        content={
+            'message':'Logged out successfully'
+        }
+    )
+    response.delete_cookie(
+        key=COOKIE_OPTIONS["key"],
+        path=COOKIE_OPTIONS['path'],
+        httponly=COOKIE_OPTIONS["httponly"],
+        secure=COOKIE_OPTIONS["secure"],
+        samesite=COOKIE_OPTIONS["samesite"],
+    )
     return response

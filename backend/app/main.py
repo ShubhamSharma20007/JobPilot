@@ -2,12 +2,14 @@ from dotenv import load_dotenv
 load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from sqlalchemy import text
+
 from routes import auth_router
 from config.config import config
 from database.db import engine, Base
-from sqlalchemy import text
-import models.user_model  # ensures the model is registered with Base
-
+from middlewares.auth_middleware import auth_middleware
+import models  # registers User and File with Base
 
 app = FastAPI(
     title="JobPilot API",
@@ -16,7 +18,8 @@ app = FastAPI(
     docs_url="/docs",
 )
 
-app.add_middleware(
+app.add_middleware(BaseHTTPMiddleware, dispatch=auth_middleware)  # inner
+app.add_middleware(                                               # outer, added last
     CORSMiddleware,
     allow_origins=[config["CLIENT_URL"]],
     allow_credentials=True,
@@ -24,6 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
+
 
 @app.on_event("startup")
 async def startup():
@@ -33,6 +37,7 @@ async def startup():
 @app.get("/")
 async def root():
     return {"message": "Server is running!"}
+
 
 @app.get("/db-check")
 async def db_check():

@@ -15,6 +15,13 @@ const LINKS = [
 export function Navbar() {
   const { user, initialized } = useAppSelector((s) => s.auth)
 
+  
+  function scrollToSection(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
+  e.preventDefault()
+  document.querySelector(href)?.scrollIntoView({ behavior: "smooth", block: "start" })
+  history.replaceState(null, "", href)
+}
+
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">

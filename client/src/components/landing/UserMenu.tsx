@@ -1,4 +1,5 @@
 import { LogOut, Settings, User as UserIcon } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -8,24 +9,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/redux/hooks/useAuth"
-import { useNavigate } from "react-router-dom"
-const DEFAULT_AVATAR = "https://github.com/shadcn.png"
+import { UserAvatar } from "./UserAvatar"
 
+const DEFAULT_AVATAR = "https://github.com/shadcn.png"
 const itemClass = "gap-3 rounded-lg px-3 py-2 text-sm cursor-pointer"
 const iconClass = "size-4 text-muted-foreground"
 
 export function UserMenu() {
   const { user, logout } = useAuth()
-  if (!user) return null
   const navigate = useNavigate()
+  if (!user) return null
+
   const label = user.name ?? user.email
   const initials = label.slice(0, 2).toUpperCase()
   const src = user.picture ?? DEFAULT_AVATAR
 
-  function handleLogout() {
-    logout()
+  async function handleLogout() {
+    await logout() 
     navigate("/", { replace: true })
-  }
+}
 
   return (
     <DropdownMenu>
@@ -36,14 +38,10 @@ export function UserMenu() {
         aria-label="Open profile menu"
         className="rounded-full outline-none ring-2 ring-transparent transition hover:ring-border focus-visible:ring-ring/50"
       >
-        <Avatar>
-          <AvatarImage src={src} alt={label} referrerPolicy="no-referrer" />
-          <AvatarFallback>{initials}</AvatarFallback>
-        </Avatar>
+        <UserAvatar src={src} label={label} initials={initials} className="size-10" />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" sideOffset={8} className="w-64 rounded-xl p-1.5">
-        {/* Profile header */}
         <div className="mb-1 flex items-center gap-3 rounded-lg bg-muted/60 p-3">
           <Avatar className="size-10">
             <AvatarImage src={src} alt={label} referrerPolicy="no-referrer" />

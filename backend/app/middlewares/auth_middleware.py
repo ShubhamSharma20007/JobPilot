@@ -17,7 +17,7 @@ async def auth_middleware(request: Request, call_next):
     path = request.url.path
 
     # Let CORS preflight and public routes through
-    if path in PUBLIC_PATHS or path.startswith(PUBLIC_PREFIXES):
+    if request.method == "OPTIONS" or path in PUBLIC_PATHS or path.startswith(PUBLIC_PREFIXES):
         return await call_next(request)
 
     token = request.cookies.get(COOKIE_OPTIONS["key"])

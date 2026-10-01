@@ -1,32 +1,32 @@
-import { GoogleLogin } from '@react-oauth/google';
-import { authService } from "./services/auth.service";
-
-async function handleGoogleLogin(credentialResponse) {
-  if (credentialResponse.credential) {
-    try {
-      const data = await authService.verifyToken(credentialResponse.credential);
-      console.log("Logged in user:", data);
-     
-    } catch (error) {
-      console.error("Token verification failed", error);
-      alert("Failed to verify token on backend.");
-    }
-  }
-}
-
+import { useEffect } from "react"
+import { Navigate, Route, Routes } from "react-router-dom"
+import { useAppDispatch } from "@/redux/hook"
+import { fetchCurrentUser } from "@/redux/slices/authSlice"
+import { Layout } from "@/components/Layout"
+import { ProtectedRoute } from "@/components/ProtectedRoute"
+import Landing from "@/pages/Landing"
+import Profile from "@/pages/Profile"
+import Settings from "@/pages/Settings"
 
 const App = () => {
+  const dispatch = useAppDispatch()
+
+  useEffect(() => {
+    dispatch(fetchCurrentUser())
+  }, [dispatch])
+
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>
-      <GoogleLogin
-        onSuccess={handleGoogleLogin}
-        onError={() => {
-          console.error('Login Failed');
-          alert("Login Failed");
-        }}
-      />
-    </div>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<Landing />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="profile" element={<Profile />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
   )
 }
 
-export default App;
+export default App

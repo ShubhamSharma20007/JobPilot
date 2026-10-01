@@ -44,7 +44,6 @@ export const FAQ = [
   { q: "How do I find recruiter emails?", a: "For now you add them yourself and JobPilot handles everything after that. Automatic discovery of openings and contacts is planned next, with a review step so you approve each one." },
   { q: "Can I use more than one resume?", a: "Yes. Upload PDFs up to 5 MB each and choose a default, for example one for full stack roles and one for AI roles." },
 ]
-
 export const SOCIALS = {
   linkedin: "https://www.linkedin.com/in/your-handle",
   twitter: "https://x.com/your-handle",

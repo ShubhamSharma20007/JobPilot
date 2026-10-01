@@ -19,27 +19,15 @@ function XIcon() {
 const iconLink =
   "inline-grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
 
-export function SocialLinks({ className = "" }: { className?: string }) {
+export function SocialLinks({ className = "flex" }: { className?: string }) {
   return (
     <div className={`items-center ${className}`}>
-      <a
-        href={SOCIALS.linkedin}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="JobPilot on LinkedIn"
-        className={iconLink}
-      >
+      <a href={SOCIALS.linkedin} target="_blank" rel="noopener noreferrer" aria-label="JobPilot on LinkedIn" className={iconLink}>
         <LinkedInIcon />
       </a>
-      <a
-        href={SOCIALS.twitter}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="JobPilot on X"
-        className={iconLink}
-      >
+      <a href={SOCIALS.twitter} target="_blank" rel="noopener noreferrer" aria-label="JobPilot on X" className={iconLink}>
         <XIcon />
       </a>
     </div>
   )
-}
+}
