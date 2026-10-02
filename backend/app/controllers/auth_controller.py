@@ -107,7 +107,7 @@ def currentUser(req: Request, db: Session):
 
     return UserResponse.model_validate(user).model_dump(
         mode="json",
-        exclude={"updated_at","created_at"}, 
+        exclude={"updated_at"}, 
     )
 
 def logout():
