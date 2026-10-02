@@ -1,4 +1,4 @@
-import { LogOut, Settings, User as UserIcon } from "lucide-react"
+import { LogOut, Settings, TableIcon, User as UserIcon } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -25,9 +25,9 @@ export function UserMenu() {
   const src = user.picture ?? DEFAULT_AVATAR
 
   async function handleLogout() {
-    await logout() 
+    await logout()
     navigate("/", { replace: true })
-}
+  }
 
   return (
     <DropdownMenu>
@@ -57,10 +57,15 @@ export function UserMenu() {
           <UserIcon className={iconClass} />
           Profile
         </DropdownMenuItem>
+        <DropdownMenuItem className={itemClass} onClick={() => navigate("/sheet")}>
+          <TableIcon className={iconClass} />
+          Sheet
+        </DropdownMenuItem>
         <DropdownMenuItem className={itemClass} onClick={() => navigate("/settings")}>
           <Settings className={iconClass} />
           Settings
         </DropdownMenuItem>
+
 
         <DropdownMenuSeparator />
 

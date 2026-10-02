@@ -7,6 +7,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute"
 import Landing from "@/pages/Landing"
 import Profile from "@/pages/Profile"
 import Settings from "@/pages/Settings"
+import Sheet from "./pages/Sheet"
 
 const App = () => {
   const dispatch = useAppDispatch()
@@ -22,8 +23,9 @@ const App = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="profile" element={<Profile />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="sheet" element={<Sheet />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
   )

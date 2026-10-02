@@ -143,3 +143,45 @@ html {
     scroll-behavior: auto;
   }
 }
+
+/* Minimal scrollbar */
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+* {
+  --sb-thumb: color-mix(in oklch, var(--muted-foreground) 35%, transparent);
+  --sb-thumb-hover: color-mix(in oklch, var(--muted-foreground) 65%, transparent);
+}
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--sb-thumb);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--sb-thumb-hover);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox, and any browser without ::-webkit-scrollbar */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sb-thumb) transparent;
+  }
+}
