@@ -18,7 +18,14 @@ const App = () => {
 
   return (
     <>
-    <Toaster/>
+    <Toaster
+    closeButton
+    toastOptions={{
+      classNames:{
+        closeButton:'!right-0 !left-auto !translate-x-0'
+      }
+    }}
+    />
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Landing />} />
