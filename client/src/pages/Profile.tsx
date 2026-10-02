@@ -2,8 +2,9 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { useAuth } from "@/redux/hooks/useAuth"
 import { dispatchAuth } from "@/redux/hooks/dispatchAuth"
-import { useAppDispatch, useAppSelector } from "@/redux/hook"
-import { markDefaultResume, removeResume } from "@/redux/slices/authSlice"
+import { useAppDispatch } from "@/redux/hook"
+import { markDefaultResume } from "@/redux/slices/authSlice"
+
 import { ProfileDetails } from "@/components/profile/ProfileDetails"
 import { ResumeDropzone } from "@/components/profile/ResumeDropzone"
 import { CurrentResume, ResumeList } from "@/components/profile/ResumeList"
@@ -24,14 +25,29 @@ const errorText = (e: unknown, fallback: string) => (typeof e === "string" ? e :
 export default function Profile() {
   const { user } = useAuth()
   const dispatch = useAppDispatch()
-  const { addFile } = dispatchAuth()
+  const { addFile,deleteFile } = dispatchAuth()
   const {resumes} = useAuth()
   const [busy, setBusy] = useState(false)
-
+const [deletingId, setDeletingId] = useState<string | null>(null)
   if (!user) return null
 
   const current = resumes.find((r) => r.isDefault)
   const atLimit = resumes.length >= MAX_RESUMES
+
+
+  async function handleDelete(id: string) {
+  const name = resumes.find((r) => r.id === id)?.name ?? "resume"
+  setDeletingId(id)
+  const toastId = toast.loading(`Deleting ${name}…`)
+  try {
+    await deleteFile(id)
+    toast.success(`${name} deleted`, { id: toastId })
+  } catch (e) {
+    toast.error(`Couldn't delete ${name}`, { id: toastId, description: errorText(e, "Please try again.") })
+  } finally {
+    setDeletingId(null)
+  }
+}
 
   async function addFiles(files: File[]) {
     const remaining = MAX_RESUMES - resumes.length
@@ -102,7 +118,12 @@ export default function Profile() {
             title={`Your resumes (${resumes.length}/${MAX_RESUMES})`}
             body="Choose which one is the default."
           />
-          <ResumeList resumes={resumes} onSetDefault={makeDefault} onDelete={(id) => dispatch(removeResume(id))} />
+         <ResumeList
+        resumes={resumes}
+        onSetDefault={makeDefault}
+        onDelete={handleDelete}
+        deletingId={deletingId}
+      />
         </div>
       )}
     </section>

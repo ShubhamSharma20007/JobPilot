@@ -4,7 +4,7 @@ import type { CurrentUserResponse, UpdateProfileInput, UpdateProfileResponse, Us
 import type { Resume } from "@/types/resume.type"
 import { authService } from "@/services/auth.service"
 import { userService } from "@/services/user.service"
-import { fileService } from "@/services/file.service"
+import { fileService, type DeleteResumeResult } from "@/services/file.service"
 
 type AuthState = {
   user: User | null
@@ -80,6 +80,19 @@ export const markDefaultResume = createAsyncThunk<Resume, string, { rejectValue:
   }
 )
 
+//  delete resume 
+
+export const deleteResume = createAsyncThunk<DeleteResumeResult, string, { rejectValue: string }>(
+  "auth/deleteResume",
+  async (id, { rejectWithValue }) => {
+    try {
+      return await fileService.remove(id)
+    } catch (e) {
+      return rejectWithValue(errorMessage(e, "Could not delete the resume."))
+    }
+  }
+)
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -147,13 +160,24 @@ const authSlice = createSlice({
       .addCase(logout.fulfilled, () => ({
         ...initialState, initialized: true
       }))
+      //  mark defalult
       .addCase(markDefaultResume.fulfilled, (state, action) => {
         state.resumes.forEach((r) => {
           r.isDefault = r.id === action.payload.id
         })
       })
+      //  delete resume file
+      .addCase(deleteResume.fulfilled, (state, action) => {
+        state.resumes = state.resumes.filter((r) => r.id !== action.payload.id)
+        const { newDefaultId } = action.payload
+        if (newDefaultId) {
+          state.resumes.forEach((r) => {
+            r.isDefault = r.id === newDefaultId
+          })
+        }
+      })
   },
 })
 
-export const { setUser, removeUser, removeResume } = authSlice.actions
+export const { setUser, removeUser } = authSlice.actions
 export default authSlice.reducer

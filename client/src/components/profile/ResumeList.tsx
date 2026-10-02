@@ -1,6 +1,7 @@
-import { Eye, FileText, Star, Trash2 } from "lucide-react"
+import { useState } from "react"
+import { Eye, FileText, Loader2, Star, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {  type Resume } from "@/types/resume.type"
+import { type Resume } from "@/types/resume.type"
 
 export function formatSize(bytes: number) {
   return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
@@ -47,54 +48,97 @@ type ListProps = {
   resumes: Resume[]
   onSetDefault: (id: string) => void
   onDelete: (id: string) => void
+  /** The resume being deleted right now, shown with a spinner */
+  deletingId?: string | null
 }
 
 /** All uploaded resumes, with set-default and delete actions */
-export function ResumeList({ resumes, onSetDefault, onDelete }: ListProps) {
+export function ResumeList({ resumes, onSetDefault, onDelete, deletingId = null }: ListProps) {
+  const [confirmId, setConfirmId] = useState<string | null>(null)
+
   if (resumes.length === 0) return null
 
   return (
     <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
-      {resumes.map((r) => (
-        <li key={r.id} className="flex flex-wrap items-center gap-3 p-4">
-          <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
-            <FileText className="size-5" />
-          </span>
+      {resumes.map((r) => {
+        const confirming = confirmId === r.id
+        const deleting = deletingId === r.id
 
-          <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-2 text-sm font-medium">
-              <span className="truncate">{r.name}</span>
-              {r.isDefault && (
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                  <Star className="size-3" /> Default
-                </span>
-              )}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {formatSize(r.size)}, uploaded {formatDate(r.uploadedAt)}
-            </p>
-          </div>
+        return (
+          <li key={r.id} className={`flex flex-wrap items-center gap-3 p-4 transition-opacity ${deleting ? "opacity-60" : ""}`}>
+            <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+              <FileText className="size-5" />
+            </span>
 
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={`View ${r.name}`}
-              onClick={() => window.open(r.url, "_blank", "noopener")}
-            >
-              <Eye />
-            </Button>
-            {!r.isDefault && (
-              <Button variant="outline" size="sm" onClick={() => onSetDefault(r.id)}>
-                <Star /> Make default
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <span className="truncate">{r.name}</span>
+                {r.isDefault && (
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                    <Star className="size-3" /> Default
+                  </span>
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatSize(r.size)}, uploaded {formatDate(r.uploadedAt)}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`View ${r.name}`}
+                onClick={() => window.open(r.url, "_blank", "noopener")}
+              >
+                <Eye />
               </Button>
+              {!r.isDefault && (
+                <Button variant="outline" size="sm" disabled={deleting} onClick={() => onSetDefault(r.id)}>
+                  <Star /> Make default
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Delete ${r.name}`}
+                disabled={deleting}
+                onClick={() => setConfirmId(r.id)}
+              >
+                {deleting ? <Loader2 className="animate-spin" /> : <Trash2 className="text-destructive" />}
+              </Button>
+            </div>
+
+            {confirming && (
+              <div
+                role="group"
+                aria-label={`Confirm deleting ${r.name}`}
+                className="flex w-full flex-wrap items-center justify-between gap-3 rounded-lg bg-destructive/5 px-3 py-2"
+              >
+                <p className="text-sm">
+                  Delete <span className="font-medium">{r.name}</span>? This can't be undone.
+                  {r.isDefault && resumes.length > 1 && " Your newest remaining resume will become the default."}
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" autoFocus onClick={() => setConfirmId(null)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setConfirmId(null)
+                      onDelete(r.id)
+                    }}
+                  >
+                    <Trash2 /> Delete
+                  </Button>
+                </div>
+              </div>
             )}
-            <Button variant="ghost" size="icon" aria-label={`Delete ${r.name}`} onClick={() => onDelete(r.id)}>
-              <Trash2 className="text-destructive" />
-            </Button>
-          </div>
-        </li>
-      ))}
+          </li>
+        )
+      })}
     </ul>
   )
 }
