@@ -5,6 +5,7 @@ import type { Resume } from "@/types/resume.type"
 import { authService } from "@/services/auth.service"
 import { userService } from "@/services/user.service"
 import { fileService, type DeleteResumeResult } from "@/services/file.service"
+import { gmailService } from "@/services/gmail.service"
 
 type AuthState = {
   user: User | null
@@ -93,6 +94,18 @@ export const deleteResume = createAsyncThunk<DeleteResumeResult, string, { rejec
   }
 )
 
+// google login with gmail scope 
+export const connectGmail = createAsyncThunk<{ gmail_connected: boolean }, string, { rejectValue: string }>(
+  "auth/connectGmail",
+  async (code, { rejectWithValue }) => {
+    try {
+      return await gmailService.connect(code)
+    } catch (e) {
+      return rejectWithValue(errorMessage(e, "Couldn't connect Gmail."))
+    }
+  }
+)
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -175,6 +188,10 @@ const authSlice = createSlice({
             r.isDefault = r.id === newDefaultId
           })
         }
+      })
+      // google login
+      .addCase(connectGmail.fulfilled, (state, action) => {
+        if (state.user) state.user.gmail_connected = action.payload.gmail_connected
       })
   },
 })

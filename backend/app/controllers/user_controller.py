@@ -3,7 +3,7 @@ import uuid
 from fastapi import HTTPException, Request, UploadFile, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-
+from utils.user_payload import user_out
 from models.file_model import File as FileModel  # aliased so it doesn't clash with fastapi.File
 from models.user_model import User
 from schemas.resume_schema import resume_out
@@ -115,6 +115,6 @@ def update_profile(
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
 
     return {
-        "user": UserResponse.model_validate(user).model_dump(mode="json"),
+        "user": user_out(db, user),
         "resume": resume_out(record) if record else None,
     }

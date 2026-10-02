@@ -10,6 +10,7 @@ export interface User {
   created_at?: string
   updated_at?: string | null
   resume_id?: string | null
+  gmail_connected?: boolean
 }
 
 /** What GET /auth/me returns: the user plus all of their resumes */

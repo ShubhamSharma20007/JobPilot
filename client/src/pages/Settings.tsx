@@ -10,6 +10,7 @@ import { SendingSettings } from "@/components/settings/SendingSettings"
 import { TemplateSettings } from "@/components/settings/TemplateSettings"
 import { NotificationSettings } from "@/components/settings/NotificationSettings"
 import { DangerZone } from "@/components/settings/DangerZone"
+import { GmailSettings } from "@/components/settings/GmailSettings"
 
 // Handles both plain errors and FastAPI/Pydantic validation errors (422)
 function apiError(e: unknown, fallback: string) {
@@ -96,12 +97,13 @@ export default function Settings() {
   }
 
   return (
+    <>
     <section className="mx-auto max-w-3xl space-y-8 px-4 py-12 pb-28">
       <div>
         <h1 className="font-heading text-3xl font-bold">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">Control how and when JobPilot sends your applications.</p>
       </div>
-
+      <GmailSettings />
       <SendingSettings value={draft} onChange={patch} />
       <TemplateSettings value={draft} onChange={patch} email={user.email} name={user.name ?? user.email} />
       <NotificationSettings value={draft} onChange={patch} />
@@ -126,5 +128,6 @@ export default function Settings() {
         </div>
       </div>
     </section>
+    </>
   )
 }

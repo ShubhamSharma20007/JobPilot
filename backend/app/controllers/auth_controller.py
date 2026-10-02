@@ -5,7 +5,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-
+from utils.user_payload import user_out
 from config.cookiOptions import COOKIE_OPTIONS
 from config.config import config
 from models.file_model import File as FileModel
@@ -77,9 +77,7 @@ def google_verify(token: str, db: Session) -> JSONResponse:
         "name": user.name,
     })
 
-    response = JSONResponse(
-        content=jsonable_encoder(UserResponse.model_validate(user))
-    )
+    response = JSONResponse(content=jsonable_encoder(user_out(db, user)))
     response.set_cookie(**COOKIE_OPTIONS, value=access_token)
     return response
 
@@ -115,10 +113,7 @@ def currentUser(req: Request, db: Session):
             detail="User not found",
         )
 
-    data = UserResponse.model_validate(user).model_dump(
-        mode="json",
-        exclude={"updated_at"},
-    )
+    data = user_out(db, user)
     data["resumes"] = [resume_out(f) for f in files]
     return data
 

@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { makeRows, SpreadsheetGrid } from "@/components/sheet/SpreadsheetGrid"
 import type { SheetRow } from "@/types/sheet.type"
+import { useAuth } from "@/redux/hooks/useAuth"
+import { ConnectGmail } from "@/components/gmail/ConnectGmail"
 const SYNC_OPTIONS = [
   { value: "10", label: "10 minutes" },
   { value: "30", label: "30 minutes" },
@@ -21,7 +23,7 @@ const SYNC_OPTIONS = [
 export default function Sheet() {
   const [rows, setRows] = useState<SheetRow[]>(() => makeRows(20))
   const [syncMinutes, setSyncMinutes] = useState("30")
-
+  const { user } = useAuth()
   const current = SYNC_OPTIONS.find((o) => o.value === syncMinutes)
 
   return (
@@ -59,7 +61,14 @@ export default function Sheet() {
           </DropdownMenu>
         </div>
       </div>
-
+      {!user?.gmail_connected && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed p-4">
+          <p className="text-sm">
+            Connect your Gmail so JobPilot can send these applications. Nothing is sent until you do.
+          </p>
+          <ConnectGmail />
+        </div>
+      )}
       <div className="mt-6">
         <SpreadsheetGrid rows={rows} onChange={setRows} />
       </div>
