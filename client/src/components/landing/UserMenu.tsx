@@ -1,4 +1,6 @@
-import { LogOut, Settings, TableIcon, User as UserIcon } from "lucide-react"
+import { LogOut, Moon, Settings, Sun, TableIcon, User as UserIcon } from "lucide-react"
+import { useTheme } from "@/context/theme-context"
+import { Switch } from "@/components/settings/primitives"
 import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -19,6 +21,8 @@ export function UserMenu() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   if (!user) return null
+  const { theme, toggleTheme } = useTheme()
+  const isDark = theme === "dark"
 
   const label = user.name ?? user.email
   const initials = label.slice(0, 2).toUpperCase()
@@ -52,7 +56,17 @@ export function UserMenu() {
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>
           </div>
         </div>
-
+        <DropdownMenuItem
+          className={itemClass}
+          closeOnClick={false} // keep the menu open so the switch visibly flips
+          onClick={toggleTheme}
+        >
+          {isDark ? <Moon className={iconClass} /> : <Sun className={iconClass} />}
+          Dark mode
+          <span className="pointer-events-none ml-auto" aria-hidden>
+            <Switch label="Dark mode" checked={isDark} onChange={() => { }} />
+          </span>
+        </DropdownMenuItem>
         <DropdownMenuItem className={itemClass} onClick={() => navigate("/profile")}>
           <UserIcon className={iconClass} />
           Profile
