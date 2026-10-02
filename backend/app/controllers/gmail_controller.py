@@ -1,3 +1,10 @@
+import re
+from email.message import EmailMessage
+from email.utils import formataddr
+
+from models.file_model import File as FileModel
+from utils.gmail_client import GmailAuthError, GmailSendError, send_message
+
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -15,6 +22,7 @@ from utils.request_user import get_user_id
 from utils.user_payload import GMAIL_SEND_SCOPE
 
 TOKEN_URL = "https://oauth2.googleapis.com/token"
+MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
 
 
 def _exchange_code(code: str) -> dict:
@@ -112,3 +120,77 @@ def connect_gmail(req: Request, db: Session, code: str) -> dict:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
 
     return {"gmail_connected": True}
+
+def _fill(text: str, name: str) -> str:
+    """Same sample data the Preview tab uses."""
+    sample = {
+        "company": "Acme Labs",
+        "role": "Full Stack Developer",
+        "recruiter_name": "Priya",
+        "name": name,
+    }
+    return re.sub(r"\{\{\s*(\w+)\s*\}\}", lambda m: sample.get(m.group(1), m.group(0)), text)
+
+
+def _default_resume(db: Session, user: User) -> tuple[bytes, str] | None:
+    """Download the default resume. Returns None if there isn't one or it can't be fetched."""
+    f = (
+        db.query(FileModel)
+        .filter(FileModel.user_id == user.id)
+        .order_by(FileModel.is_default.desc(), FileModel.created_at.desc())
+        .first()
+    )
+    if not f:
+        return None
+    try:
+        res = requests.get(f.file_path, timeout=15)
+        res.raise_for_status()
+    except requests.RequestException as e:
+        print("Resume download failed:", e)
+        return None
+    if len(res.content) > MAX_ATTACHMENT_BYTES:
+        return None
+    return res.content, f.original_name
+
+
+def send_test_email(req: Request, db: Session, subject: str, body: str) -> dict:
+    user = db.get(User, get_user_id(req))
+    if not user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+
+    row = db.get(OAuthToken, user.id)
+    if not row or not row.refresh_token_enc or GMAIL_SEND_SCOPE not in (row.scopes or "").split():
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Connect your Gmail first.")
+
+    display_name = user.name or user.email
+    msg = EmailMessage()
+    msg["From"] = formataddr((display_name.replace("\n", " ").replace("\r", " "), user.email))
+    msg["To"] = user.email
+    msg["Subject"] = "[Test] " + _fill(subject, display_name).replace("\r", " ").replace("\n", " ")
+    msg.set_content(_fill(body, display_name))
+
+    resume = _default_resume(db, user)
+    if resume:
+        data, filename = resume
+        #  attach the resume 
+        msg.add_attachment(data, maintype="application", subtype="pdf", filename=filename)  
+        
+
+    try:
+        send_message(db, row, msg)
+    except GmailAuthError:
+        # Tokens are no longer usable: clear them so the UI offers "Connect Gmail" again
+        try:
+            db.delete(row)
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Gmail access expired. Please connect Gmail again.")
+    except GmailSendError as e:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(e))
+    except (ValueError, SQLAlchemyError) as e:
+        db.rollback()
+        print("Test email error:", e)
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Couldn't build the test email.")
+
+    return {"sent_to": user.email, "attached_resume": resume[1] if resume else None}

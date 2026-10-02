@@ -1,9 +1,13 @@
 import { useRef, useState } from "react"
-import { Eye, Mail, Pencil, Send } from "lucide-react"
+import { Eye, Loader2, Mail, Pencil, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { AppSettings } from "@/types/settings.type"
 import { inputClass, SettingsCard } from "./primitives"
-
+import { useAuth } from "@/redux/hooks/useAuth"
+import { gmailService } from "@/services/gmail.service"
+import { toast } from "sonner"
+import { isAxiosError } from "axios"
+import { dispatchAuth } from "@/redux/hooks/dispatchAuth"
 type Props = { value: AppSettings; onChange: (patch: Partial<AppSettings>) => void; email: string; name: string }
 
 const PLACEHOLDERS = ["{{company}}", "{{role}}", "{{recruiter_name}}", "{{name}}"]
@@ -20,8 +24,14 @@ function fill(text: string, name: string) {
 
 export function TemplateSettings({ value, onChange, email, name }: Props) {
   const [tab, setTab] = useState<"edit" | "preview">("edit")
-  const [sent, setSent] = useState(false)
+  const[sent,setSent] = useState(false)
+  const [sending, setSending] = useState(false)
   const bodyRef = useRef<HTMLTextAreaElement>(null)
+  const { user } = useAuth()
+  const{fetchCurrentUser} = dispatchAuth()
+
+  const connected = !!user?.gmail_connected
+  const canSend = connected && !!value.subject.trim() && !!value.body.trim()
 
   function insert(token: string) {
     const el = bodyRef.current
@@ -34,10 +44,24 @@ export function TemplateSettings({ value, onChange, email, name }: Props) {
     })
   }
 
-  function sendTest() {
-    // TODO: call your backend to send a test email to the user
-    setSent(true)
-    setTimeout(() => setSent(false), 3000)
+async function sendTest() {
+    setSending(true)
+    try {
+      const res = await gmailService.sendTest(value.subject, value.body)
+      toast.success(`Test email sent to ${res.sent_to}`, {
+        description: res.attached_resume
+          ? `Attached: ${res.attached_resume}`
+          : "No resume attached. Upload one on your Profile page.",
+      })
+    } catch (e) {
+      const detail = isAxiosError(e) ? e.response?.data?.detail : null
+      toast.error("Couldn't send test email", {
+        description: typeof detail === "string" ? detail : "Please try again.",
+      })
+     fetchCurrentUser() // refreshes gmail_connected if the tokens were cleared
+    } finally {
+      setSending(false)
+    }
   }
 
   const tabClass = (active: boolean) =>
@@ -53,10 +77,13 @@ export function TemplateSettings({ value, onChange, email, name }: Props) {
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
-            {sent ? `Test email sent to ${email}.` : `Send a filled-in sample to ${email} before real emails go out.`}
+            {connected
+              ? `Send a filled-in sample to ${email} before real emails go out.`
+              : "Connect Gmail at the top of this page to send a test."}
           </p>
-          <Button variant="outline" onClick={sendTest} disabled={sent}>
-            <Send /> Send test to me
+          <Button variant="outline" onClick={sendTest} disabled={!canSend || sending}>
+            {sending ? <Loader2 className="animate-spin" /> : <Send />}
+            {sending ? "Sending…" : "Send test to me"}
           </Button>
         </div>
       }
@@ -125,7 +152,7 @@ export function TemplateSettings({ value, onChange, email, name }: Props) {
                 {name} &lt;{email}&gt;
               </p>
               <p>
-                <span className="text-muted-foreground">To: </span>priya@acmelabs.com
+                <span className="text-muted-foreground">To: </span>{email}
               </p>
               <p className="font-medium">{fill(value.subject, name)}</p>
             </div>

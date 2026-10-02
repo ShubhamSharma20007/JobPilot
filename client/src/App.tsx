@@ -1,7 +1,6 @@
 import { useEffect } from "react"
 import { Navigate, Route, Routes } from "react-router-dom"
 import { useAppDispatch } from "@/redux/hook"
-import { fetchCurrentUser } from "@/redux/slices/authSlice"
 import { Layout } from "@/components/Layout"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import Landing from "@/pages/Landing"
@@ -9,11 +8,13 @@ import Profile from "@/pages/Profile"
 import Settings from "@/pages/Settings"
 import Sheet from "./pages/Sheet"
 import { Toaster } from "./components/ui/sonner"
+import { dispatchAuth } from "./redux/hooks/dispatchAuth"
 const App = () => {
   const dispatch = useAppDispatch()
+  const {fetchCurrentUser} = dispatchAuth()
 
   useEffect(() => {
-    dispatch(fetchCurrentUser())
+   fetchCurrentUser()
   }, [dispatch])
 
   return (
