@@ -1,5 +1,5 @@
 import { instance } from "../utils/instance"
-import type { User } from "@/types/user.type"
+import type { CurrentUserResponse, User } from "@/types/user.type"
 
 class AuthService {
   async verifyToken(credential: string): Promise<User> {
@@ -7,8 +7,8 @@ class AuthService {
     return res.data
   }
 
-  async getMe(): Promise<User> {
-    const res = await instance.get<User>("/auth/me")
+  async getMe(): Promise<CurrentUserResponse> {
+    const res = await instance.get<CurrentUserResponse>("/auth/me")
     return res.data
   }
 

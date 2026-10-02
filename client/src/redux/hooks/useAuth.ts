@@ -6,6 +6,8 @@ export function useAuth() {
   const dispatch = useAppDispatch()
   return {
     user: useAppSelector((state) => state.auth.user),
+    resumes:useAppSelector((s) => s.auth.resumes),
+    initialized:useAppSelector((s)=> s.auth.initialized),
     setUser: (user: User) => {
       dispatch(setUser(user))
     },

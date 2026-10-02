@@ -1,3 +1,6 @@
+
+export const MAX_RESUMES = 5
+export const MAX_RESUME_MB = 5
 export interface Resume {
   id: string
   name: string

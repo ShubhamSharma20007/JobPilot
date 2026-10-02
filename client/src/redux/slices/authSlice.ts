@@ -1,16 +1,30 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit"
 import { isAxiosError } from "axios"
-import type { User } from "@/types/user.type"
+import type { CurrentUserResponse, UpdateProfileInput, UpdateProfileResponse, User } from "@/types/user.type"
+import type { Resume } from "@/types/resume.type"
 import { authService } from "@/services/auth.service"
+import { userService } from "@/services/user.service"
+import { fileService } from "@/services/file.service"
 
 type AuthState = {
   user: User | null
+  resumes: Resume[]
   status: "idle" | "loading" | "succeeded" | "failed"
   error: string | null
   initialized: boolean
+  profileStatus: "idle" | "loading" | "succeeded" | "failed"
+  profileError: string | null
 }
 
-const initialState: AuthState = { user: null, status: "idle", error: null, initialized: false }
+const initialState: AuthState = {
+  user: null,
+  resumes: [],
+  status: "idle",
+  error: null,
+  initialized: false,
+  profileStatus: "idle",
+  profileError: null,
+}
 
 function errorMessage(e: unknown, fallback: string) {
   if (isAxiosError(e) && typeof e.response?.data?.detail === "string") return e.response.data.detail
@@ -28,10 +42,21 @@ export const loginWithGoogle = createAsyncThunk<User, string, { rejectValue: str
   }
 )
 
-
-export const fetchCurrentUser = createAsyncThunk<User>("auth/fetchCurrentUser", async () => {
+// Returns the user plus their resumes
+export const fetchCurrentUser = createAsyncThunk<CurrentUserResponse>("auth/fetchCurrentUser", async () => {
   return await authService.getMe()
 })
+
+export const updateProfile = createAsyncThunk<UpdateProfileResponse, UpdateProfileInput, { rejectValue: string }>(
+  "auth/updateProfile",
+  async (input, { rejectWithValue }) => {
+    try {
+      return await userService.updateProfile(input)
+    } catch (e) {
+      return rejectWithValue(errorMessage(e, "Failed to update profile."))
+    }
+  }
+)
 
 export const logout = createAsyncThunk("auth/logout", async () => {
   try {
@@ -40,6 +65,20 @@ export const logout = createAsyncThunk("auth/logout", async () => {
 
   }
 })
+
+
+//  Mark default Thunk
+
+export const markDefaultResume = createAsyncThunk<Resume, string, { rejectValue: string }>(
+  "auth/markDefaultResume",
+  async (id, { rejectWithValue }) => {
+    try {
+      return await fileService.markDefault(id)
+    } catch (e) {
+      return rejectWithValue(errorMessage(e, "Could not change your default resume."))
+    }
+  }
+)
 
 const authSlice = createSlice({
   name: "auth",
@@ -50,6 +89,16 @@ const authSlice = createSlice({
     },
     removeUser: (state) => {
       state.user = null
+    },
+    // TODO: these two only change local state until the backend has set-default / delete routes
+    setDefaultResume: (state, action: PayloadAction<string>) => {
+      state.resumes.forEach((r) => {
+        r.isDefault = r.id === action.payload
+      })
+    },
+    removeResume: (state, action: PayloadAction<string>) => {
+      state.resumes = state.resumes.filter((r) => r.id !== action.payload)
+      if (state.resumes.length && !state.resumes.some((r) => r.isDefault)) state.resumes[0].isDefault = true
     },
   },
   extraReducers: (builder) => {
@@ -68,18 +117,43 @@ const authSlice = createSlice({
         state.error = action.payload ?? "Login failed."
       })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
-        state.user = action.payload
+        const { resumes, ...user } = action.payload
+        state.user = user
+        state.resumes = resumes ?? []
         state.initialized = true
       })
       .addCase(fetchCurrentUser.rejected, (state) => {
         state.user = null
+        state.resumes = []
         state.initialized = true
       })
-      .addCase(logout.fulfilled, () => ({ 
+      .addCase(updateProfile.pending, (state) => {
+        state.profileStatus = "loading"
+        state.profileError = null
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.profileStatus = "succeeded"
+        state.user = action.payload.user
+        const resume = action.payload.resume
+        if (resume) {
+          if (resume.isDefault) state.resumes.forEach((r) => (r.isDefault = false))
+          state.resumes.push(resume)
+        }
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.profileStatus = "failed"
+        state.profileError = action.payload ?? "Failed to update profile."
+      })
+      .addCase(logout.fulfilled, () => ({
         ...initialState, initialized: true
-       }))
+      }))
+      .addCase(markDefaultResume.fulfilled, (state, action) => {
+        state.resumes.forEach((r) => {
+          r.isDefault = r.id === action.payload.id
+        })
+      })
   },
 })
 
-export const { setUser, removeUser } = authSlice.actions
+export const { setUser, removeUser, removeResume } = authSlice.actions
 export default authSlice.reducer

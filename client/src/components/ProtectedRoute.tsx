@@ -1,8 +1,8 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom"
-import { useAppSelector } from "@/redux/hook"
+import { useAuth } from "@/redux/hooks/useAuth"
 
 export function ProtectedRoute() {
-  const { user, initialized } = useAppSelector((s) => s.auth)
+  const { user, initialized } = useAuth()
   const location = useLocation()
 
   if (!initialized) {

@@ -8,7 +8,9 @@ from sqlalchemy.orm import Session
 
 from config.cookiOptions import COOKIE_OPTIONS
 from config.config import config
+from models.file_model import File as FileModel
 from models.user_model import User
+from schemas.resume_schema import resume_out
 from schemas.user_schema import UserResponse
 from utils.jwt import create_access_token
 import uuid
@@ -92,6 +94,14 @@ def currentUser(req: Request, db: Session):
 
     try:
         user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            # default resume first, then newest first
+            files = (
+                db.query(FileModel)
+                .filter(FileModel.user_id == user.id)
+                .order_by(FileModel.is_default.desc(), FileModel.created_at.desc())
+                .all()
+            )
     except Exception as e:
         print(e)
         raise HTTPException(
@@ -105,10 +115,12 @@ def currentUser(req: Request, db: Session):
             detail="User not found",
         )
 
-    return UserResponse.model_validate(user).model_dump(
+    data = UserResponse.model_validate(user).model_dump(
         mode="json",
-        exclude={"updated_at"}, 
+        exclude={"updated_at"},
     )
+    data["resumes"] = [resume_out(f) for f in files]
+    return data
 
 def logout():
     response =  JSONResponse(

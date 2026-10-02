@@ -2,8 +2,8 @@ import { ThemeToggle } from "./ThemeToggle"
 import { GoogleSignIn } from "./GoogleSignIn"
 import { UserMenu } from "./UserMenu"
 import { APP } from "./Content"
-import { useAppSelector } from "@/redux/hook"
 import { Link } from "react-router-dom"
+import { useAuth } from "@/redux/hooks/useAuth"
 
 const LINKS = [
   { href: "#how-it-works", label: "How it works" },
@@ -13,7 +13,7 @@ const LINKS = [
 ]
 
 export function Navbar() {
-  const { user, initialized } = useAppSelector((s) => s.auth)
+  const { user, initialized } = useAuth()
 
   
   function scrollToSection(e: React.MouseEvent<HTMLAnchorElement>, href: string) {

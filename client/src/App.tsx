@@ -8,7 +8,7 @@ import Landing from "@/pages/Landing"
 import Profile from "@/pages/Profile"
 import Settings from "@/pages/Settings"
 import Sheet from "./pages/Sheet"
-
+import { Toaster } from "./components/ui/sonner"
 const App = () => {
   const dispatch = useAppDispatch()
 
@@ -17,6 +17,8 @@ const App = () => {
   }, [dispatch])
 
   return (
+    <>
+    <Toaster/>
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Landing />} />
@@ -28,6 +30,7 @@ const App = () => {
       <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
+    </>
   )
 }
 

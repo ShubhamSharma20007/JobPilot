@@ -7,3 +7,6 @@ const rootReducer: typeof appReducer = (state, action) =>
   appReducer(action.type === logout.fulfilled.type ? undefined : state, action)
 
 export const store = configureStore({ reducer: rootReducer })
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;

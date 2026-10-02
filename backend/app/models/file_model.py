@@ -16,9 +16,9 @@ class File(Base):
         index=True,
     )
     original_name = Column(String, nullable=False)
-    file_path = Column(String, nullable=False)
+    file_path = Column(String, nullable=False)  # public ImageKit URL
+    storage_file_id = Column(String, nullable=True)  # ImageKit fileId, needed to delete the file later
     content_type = Column(String, nullable=True)
     size_bytes = Column(Integer, nullable=True)
     is_default = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    

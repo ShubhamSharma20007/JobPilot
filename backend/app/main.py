@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy import text
 
-from routes import auth_router
+from routes import auth_router, user_router,file_route
 from config.config import config
 from database.db import engine, Base
 from middlewares.auth_middleware import auth_middleware
@@ -23,10 +23,12 @@ app.add_middleware(                                               # outer, added
     CORSMiddleware,
     allow_origins=[config["CLIENT_URL"]],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET","POST","DELETE","PUT","PATCH"],
     allow_headers=["*"],
 )
 app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
+app.include_router(user_router.router, prefix="/user", tags=["user"])
+app.include_router(file_route.router, prefix="/file", tags=["file"])
 
 
 @app.on_event("startup")
