@@ -193,15 +193,14 @@ def sync_user(user_id) -> None:
         while True:  # keep going until nothing is left, so rows added during the run are sent too
             db.refresh(prefs)
             if prefs.paused:
-                return
+                print("sync_user: paused", user_id); return
             if not _has_pending(db, user_id, done):
-                return
+                print("sync_user: nothing pending", user_id); return
             if not _in_window(prefs):
-                _retry_soon(db, user_id)
-                return
-            quota = prefs.daily_limit - _sent_today(db, prefs)
+                print("sync_user: outside window", prefs.timezone, prefs.window_start, prefs.window_end)
+                _retry_soon(db, user_id); return
             if quota <= 0:
-                return
+                print("sync_user: daily limit reached", user_id); return
 
             batch = _claim(db, user_id, quota, done)
             if not batch:
