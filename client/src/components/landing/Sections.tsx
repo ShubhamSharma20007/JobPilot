@@ -1,14 +1,8 @@
 import { Link } from "react-router-dom"
-import { ArrowRight, ArrowUp, CheckCircle2, Clock, FileText } from "lucide-react"
+import { APP, FAQ, FEATURES, FLOW, FLOW_V2, SOCIALS, STATS, STEPS } from "./Content"
+import { ArrowRight, ArrowUp, Ban, CheckCircle2, Clock, FileText, Mail, RefreshCw } from "lucide-react"
 import { DemoMedia } from "./DemoMedia"
 import { FlowRow } from "./Diagram"
-import { APP, FAQ, FEATURES, FLOW, FLOW_V2, STATS, STEPS } from "./Content"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { useAuth } from "@/redux/hooks/useAuth"
 import { GoogleSignIn } from "./GoogleSignIn"
@@ -18,6 +12,30 @@ import { useState } from "react"
 
 const gradientText =
   "bg-linear-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent"
+
+const FOOTER_PRODUCT = [
+  { hash: "#how-it-works", label: "How it works" },
+  { hash: "#pipeline", label: "Flow" },
+  { hash: "#features", label: "Features" },
+  { hash: "#faq", label: "FAQ" },
+]
+
+const footerLink = "text-sm text-muted-foreground transition-colors hover:text-foreground"
+
+const QUEUE = [
+  { email: "hr@acme.com", note: "Sent", tone: "ok", icon: CheckCircle2 },
+  { email: "talent@globex.io", note: "Sent", tone: "ok", icon: CheckCircle2 },
+  { email: "hr@acme.com", note: "Skipped: emailed 12 days ago", tone: "skip", icon: Ban },
+  { email: "jobs@initech.dev", note: "Retrying 2 of 3", tone: "retry", icon: RefreshCw },
+  { email: "careers@umbrella.co", note: "Next email in 74s", tone: "wait", icon: Clock },
+] as const
+
+const TONES = {
+  ok: "text-emerald-500",
+  skip: "text-amber-500",
+  retry: "text-indigo-500",
+  wait: "text-muted-foreground",
+} as const
 
 export function Hero() {
   const { user, initialized } = useAuth()
@@ -158,26 +176,60 @@ export function Features() {
   return (
     <section id="features" className="mx-auto max-w-6xl px-4 py-24">
       <Reveal>
-        <h2 className="font-heading text-4xl font-bold tracking-tight">Built to protect your reputation</h2>
-        <p className="mt-3 max-w-xl text-muted-foreground">
-          Cold email goes wrong when it looks like spam. Everything here is designed so yours never does.
-        </p>
+        <p className="text-sm font-medium text-muted-foreground">Built to protect your reputation</p>
+        <h2 className="mt-2 max-w-2xl font-heading text-4xl font-bold tracking-tight">
+          Cold email goes wrong when it looks like spam.{" "}
+          <span className={gradientText}>Yours never will.</span>
+        </h2>
       </Reveal>
-      <div className="mt-12 grid gap-4 md:grid-cols-3">
-        {FEATURES.map((f, i) => (
-          <Reveal key={f.title} delay={(i % 3) * 100} className={`${f.span}`}>
-            <div className="group relative h-full overflow-hidden rounded-3xl border bg-card p-8 transition duration-300 hover:-translate-y-0.5 hover:shadow-lg">
-              <div
-                aria-hidden
-                className="absolute inset-0 bg-linear-to-br from-indigo-500/10 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-              />
-              <div className="relative">
-                <span className="grid size-11 place-items-center rounded-xl bg-primary text-primary-foreground">
-                  <f.icon className="size-5" />
-                </span>
-                <h3 className="mt-5 font-heading text-xl font-semibold">{f.title}</h3>
-                <p className="mt-2 max-w-md text-muted-foreground">{f.body}</p>
+
+      {/* The one boxed element: the queue in action */}
+      <Reveal className="mt-12">
+        <div className="relative">
+          <div
+            aria-hidden
+            className="absolute -inset-4 -z-10 rounded-[2rem] bg-linear-to-r from-indigo-500/20 to-violet-500/20 blur-2xl"
+          />
+          <div className="overflow-hidden rounded-2xl border bg-card shadow-xl shadow-primary/5">
+            <div className="flex items-center justify-between border-b bg-muted px-4 py-3">
+              <div className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-full bg-destructive/70" />
+                <span className="size-2.5 rounded-full bg-muted-foreground/40" />
+                <span className="size-2.5 rounded-full bg-muted-foreground/40" />
               </div>
+              <span className="text-xs text-muted-foreground">Send window 09:00 to 18:00</span>
+            </div>
+
+            <ul className="divide-y">
+              {QUEUE.map((r, i) => (
+                <li key={i} className="flex items-center justify-between gap-4 px-5 py-3.5 text-sm">
+                  <span className="truncate font-mono text-xs sm:text-sm">{r.email}</span>
+                  <span className={`flex shrink-0 items-center gap-2 text-xs sm:text-sm ${TONES[r.tone]}`}>
+                    <r.icon className="size-4" />
+                    {r.note}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex items-center gap-3 border-t bg-muted/40 px-5 py-3 text-xs text-muted-foreground">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                <div className="h-full w-[30%] rounded-full bg-linear-to-r from-indigo-500 to-violet-500" />
+              </div>
+              <span className="tabular-nums">12 of 40 sent today</span>
+            </div>
+          </div>
+        </div>
+      </Reveal>
+
+      {/* Everything else: no boxes, just hairlines */}
+      <div className="mt-16 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+        {FEATURES.map((f, i) => (
+          <Reveal key={f.title} delay={(i % 3) * 100}>
+            <div className="group border-t pt-6">
+              <f.icon className="size-5 text-indigo-500 transition-transform duration-300 group-hover:-translate-y-0.5" />
+              <h3 className="mt-4 font-heading text-lg font-semibold">{f.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
             </div>
           </Reveal>
         ))}
@@ -212,8 +264,8 @@ export function Faq() {
                       aria-selected={on}
                       onClick={() => setActive(i)}
                       className={`group flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition ${on
-                          ? "border-transparent bg-primary text-primary-foreground shadow-lg"
-                          : "bg-card hover:-translate-y-0.5 hover:shadow-md"
+                        ? "border-transparent bg-primary text-primary-foreground shadow-lg"
+                        : "bg-card hover:-translate-y-0.5 hover:shadow-md"
                         }`}
                     >
                       <span
@@ -307,31 +359,99 @@ export function FinalCta() {
 
 export function Footer() {
   return (
-    <footer className="border-t py-8">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 text-sm text-muted-foreground">
-        <p>
-          © {new Date().getFullYear()} {APP.name}
-        </p>
-        <nav className="flex items-center gap-5">
-          <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
-          <Link to="/terms" className="hover:text-foreground">Terms</Link>
-        </nav>
-        <div className="flex items-center gap-1">
-          <SocialLinks />
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Scroll to top"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          >
-            <ArrowUp />
-          </Button>
+    <footer className="relative overflow-hidden border-t">
+      <div className="mx-auto max-w-6xl px-4 pt-16">
+        <div className="grid gap-12 md:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]">
+          {/* Brand */}
+          <div className="max-w-xs">
+            <Link to="/" className="flex items-center gap-2 font-heading text-xl font-bold tracking-tight">
+              <svg viewBox="0 0 64 64" className="size-8" aria-hidden>
+                <rect width="64" height="64" rx="16" className="fill-primary" />
+                <path d="M49 15 L14 29 L27 36 L34 50 Z" strokeLinejoin="round" className="fill-primary-foreground" />
+                <path d="M27 36 L49 15" fill="none" strokeWidth="2.5" strokeLinecap="round" className="stroke-primary" />
+              </svg>
+              {APP.name}
+            </Link>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Write your application email once. JobPilot sends the rest from your own Gmail, at a pace that keeps it safe.
+            </p>
+          </div>
+
+          {/* Product */}
+          <nav aria-label="Product">
+            <p className="font-heading text-sm font-semibold">Product</p>
+            <ul className="mt-4 space-y-3">
+              {FOOTER_PRODUCT.map((l) => (
+                <li key={l.hash}>
+                  <Link to={{ pathname: "/", hash: l.hash }} className={footerLink}>{l.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Legal */}
+          <nav aria-label="Legal">
+            <p className="font-heading text-sm font-semibold">Legal</p>
+            <ul className="mt-4 space-y-3">
+              <li><Link to="/privacy" className={footerLink}>Privacy</Link></li>
+              <li><Link to="/terms" className={footerLink}>Terms</Link></li>
+            </ul>
+          </nav>
+
+          {/* Contact */}
+          <div>
+            <p className="font-heading text-sm font-semibold">Get in touch</p>
+            <ul className="mt-4 space-y-3">
+              <li>
+                <a href={`mailto:${SOCIALS.email}`} className={`${footerLink} inline-flex items-center gap-2`}>
+                  <Mail className="size-4" /> Email me
+                </a>
+              </li>
+              <li>
+                <a
+                  href={SOCIALS.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${footerLink} inline-flex items-center gap-2`}
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="size-4" aria-hidden>
+                    <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z" />
+                  </svg>
+                  LinkedIn
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
+
+        {/* Bottom bar */}
+        <div className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t py-6 text-sm text-muted-foreground">
+          <p>
+            © {new Date().getFullYear()} {APP.name}. Built by Shubham Sharma.
+          </p>
+          <div className="flex items-center gap-1">
+            <SocialLinks />
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Scroll to top"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            >
+              <ArrowUp />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Large faded wordmark */}
+      <div aria-hidden className="pointer-events-none -mb-[0.18em] select-none text-center">
+        <span className="bg-linear-to-b from-foreground/15 to-transparent bg-clip-text font-heading text-[22vw] leading-none font-extrabold tracking-tighter text-transparent lg:text-[200px]">
+          {APP.name}
+        </span>
       </div>
     </footer>
   )
 }
-
 
 function StepVisual({ i }: { i: number }) {
   const chip = "inline-flex items-center gap-1.5 rounded-full border bg-background px-2.5 py-1 text-xs"

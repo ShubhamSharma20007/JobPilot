@@ -1,3 +1,4 @@
+import { Mail } from "lucide-react"
 import { SOCIALS } from "./Content"
 
 function LinkedInIcon() {
@@ -8,25 +9,17 @@ function LinkedInIcon() {
   )
 }
 
-function XIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="size-4" aria-hidden>
-      <path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.67l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64z" />
-    </svg>
-  )
-}
-
 const iconLink =
   "inline-grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
 
 export function SocialLinks({ className = "flex" }: { className?: string }) {
   return (
     <div className={`items-center ${className}`}>
-      <a href={SOCIALS.linkedin} target="_blank" rel="noopener noreferrer" aria-label="JobPilot on LinkedIn" className={iconLink}>
+      <a href={SOCIALS.linkedin} target="_blank" rel="noopener noreferrer" aria-label="Shubham on LinkedIn" className={iconLink}>
         <LinkedInIcon />
       </a>
-      <a href={SOCIALS.twitter} target="_blank" rel="noopener noreferrer" aria-label="JobPilot on X" className={iconLink}>
-        <XIcon />
+      <a href={`mailto:${SOCIALS.email}`} aria-label="Email Shubham" className={iconLink}>
+        <Mail className="size-4" />
       </a>
     </div>
   )
