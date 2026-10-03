@@ -23,11 +23,11 @@ const FOOTER_PRODUCT = [
 const footerLink = "text-sm text-muted-foreground transition-colors hover:text-foreground"
 
 const QUEUE = [
-  { email: "hr@acme.com", note: "Sent", tone: "ok", icon: CheckCircle2 },
-  { email: "talent@globex.io", note: "Sent", tone: "ok", icon: CheckCircle2 },
-  { email: "hr@acme.com", note: "Skipped: emailed 12 days ago", tone: "skip", icon: Ban },
-  { email: "jobs@initech.dev", note: "Retrying 2 of 3", tone: "retry", icon: RefreshCw },
-  { email: "careers@umbrella.co", note: "Next email in 74s", tone: "wait", icon: Clock },
+  { email: "elonmusk@starlink.org", note: "Sent", tone: "ok", icon: CheckCircle2 },
+  { email: "markzuckerberg@meta.com", note: "Sent", tone: "ok", icon: CheckCircle2 },
+  { email: "sundarpichai@gmail.com", note: "Skipped: emailed 12 days ago", tone: "skip", icon: Ban },
+  { email: "satyanadella@microsoft.com", note: "Retrying 2 of 3", tone: "retry", icon: RefreshCw },
+  { email: "shubham.sharma@mastersunion.org", note: "Next email in 74s", tone: "wait", icon: Clock },
 ] as const
 
 const TONES = {
@@ -144,19 +144,26 @@ export function Pipeline() {
         <Reveal className="mt-10 space-y-4">
           <FlowRow nodes={FLOW} highlight={3} />
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border bg-card p-4">
-              <p className="font-heading font-semibold">Sent: success tab</p>
+            <div className="rounded-2xl border bg-linear-to-br from-emerald-500/[0.08] to-transparent bg-card p-4">
+              <p className="flex items-center gap-2 font-heading font-semibold">
+                <span className="size-2 rounded-full bg-emerald-500" />
+                Sent: success tab
+              </p>
               <p className="mt-1 text-sm text-muted-foreground">Time sent, Gmail message ID, template version.</p>
             </div>
-            <div className="rounded-2xl border bg-card p-4">
-              <p className="font-heading font-semibold">Failed: failure tab</p>
+            <div className="rounded-2xl border bg-linear-to-br from-destructive/[0.08] to-transparent bg-card p-4">
+              <p className="flex items-center gap-2 font-heading font-semibold">
+                <span className="size-2 rounded-full bg-destructive" />
+                Failed: failure tab
+              </p>
               <p className="mt-1 text-sm text-muted-foreground">Reason and number of attempts, so you can fix and retry.</p>
             </div>
           </div>
         </Reveal>
 
         <Reveal>
-          <span className="mt-16 inline-flex rounded-full border border-dashed px-3 py-1 text-xs font-medium text-muted-foreground">
+          <span className="mt-16 inline-flex items-center gap-2 rounded-full border border-dashed border-indigo-500/40 bg-indigo-500/5 px-3 py-1 text-xs font-medium text-indigo-500">
+            <span className="size-1.5 rounded-full bg-indigo-500" />
             Coming next
           </span>
           <h3 className="mt-3 font-heading text-2xl font-semibold">Finding recruiters for you</h3>
