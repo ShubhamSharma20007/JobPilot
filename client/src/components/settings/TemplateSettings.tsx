@@ -14,7 +14,7 @@ const PLACEHOLDERS = ["{{company}}", "{{role}}", "{{recruiter_name}}", "{{name}}
 
 function fill(text: string, name: string) {
   const sample: Record<string, string> = {
-    company: "Acme Labs",
+    company: "Master's Union",
     role: "Full Stack Developer",
     recruiter_name: "Priya",
     name,

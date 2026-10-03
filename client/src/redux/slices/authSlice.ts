@@ -95,7 +95,7 @@ export const deleteResume = createAsyncThunk<DeleteResumeResult, string, { rejec
 )
 
 // google login with gmail scope 
-export const connectGmail = createAsyncThunk<{ gmail_connected: boolean }, string, { rejectValue: string }>(
+export const connectGmail = createAsyncThunk<{ gmail_connected: boolean,gmail_bounce_check:boolean }, string, { rejectValue: string }>(
   "auth/connectGmail",
   async (code, { rejectWithValue }) => {
     try {
@@ -191,7 +191,10 @@ const authSlice = createSlice({
       })
       // google login
       .addCase(connectGmail.fulfilled, (state, action) => {
-        if (state.user) state.user.gmail_connected = action.payload.gmail_connected
+        if (state.user) {
+            state.user.gmail_connected = action.payload.gmail_connected
+            state.user.gmail_bounce_check = action.payload.gmail_bounce_check
+          }
       })
   },
 })

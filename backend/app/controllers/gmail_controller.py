@@ -113,12 +113,17 @@ def connect_gmail(req: Request, db: Session, code: str) -> dict:
         row.scopes = " ".join(sorted(granted))
         row.expires_at = datetime.now(timezone.utc) + timedelta(seconds=int(tokens.get("expires_in", 3600)))
         db.commit()
+        was_paused = bool(row.paused) if row else False 
+        if was_paused and not body.paused:
+            kick_sync(db, user_id)
+       
     except SQLAlchemyError as e:
         db.rollback()
         print("DB error:", e)
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
+        
 
-    return {"gmail_connected": True}
+    return {"gmail_connected": True, "gmail_bounce_check": "https://www.googleapis.com/auth/gmail.readonly" in granted}
 
 
 
@@ -161,7 +166,7 @@ def _deliver_test_email(user_id, subject: str, body: str) -> None:
 def _fill(text: str, name: str) -> str:
     """Same sample data the Preview tab uses."""
     sample = {
-        "company": "Acme Labs",
+        "company": "Master's Union",
         "role": "Full Stack Developer",
         "recruiter_name": "Priya",
         "name": name,

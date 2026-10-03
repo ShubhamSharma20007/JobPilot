@@ -14,6 +14,7 @@ from schemas.resume_schema import resume_out
 from schemas.user_schema import UserResponse
 from utils.jwt import create_access_token
 import uuid
+from utils.preferences import ensure_preferences
 
 def _verify_google_token(token: str) -> dict:
     try:
@@ -56,6 +57,7 @@ def _find_or_create_user(db: Session, info: dict) -> User:
 
         db.commit()
         db.refresh(user)
+        ensure_preferences(db, user.id)  # setting created on first login
         return user
 
     except SQLAlchemyError as e:
@@ -112,7 +114,7 @@ def currentUser(req: Request, db: Session):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-
+    ensure_preferences(db, user.id)  # setting created on first login
     data = user_out(db, user)
     data["resumes"] = [resume_out(f) for f in files]
     return data

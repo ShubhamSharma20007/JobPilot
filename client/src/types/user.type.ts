@@ -11,6 +11,7 @@ export interface User {
   updated_at?: string | null
   resume_id?: string | null
   gmail_connected?: boolean
+  gmail_bounce_check?: boolean
 }
 
 /** What GET /auth/me returns: the user plus all of their resumes */

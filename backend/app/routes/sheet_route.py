@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 class SyncBody(BaseModel):
-    minutes: Literal[10, 30, 60, 120, 1440] | None = None  # in minutes
+    minutes: Literal[5, 10, 30, 60, 1440] | None = None # in minutes
     timezone: str = Field("UTC", max_length=64)
 
 

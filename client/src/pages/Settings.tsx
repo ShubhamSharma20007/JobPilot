@@ -107,7 +107,8 @@ export default function Settings() {
       <SendingSettings value={draft} onChange={patch} />
       <TemplateSettings value={draft} onChange={patch} email={user.email} name={user.name ?? user.email} />
       <NotificationSettings value={draft} onChange={patch} />
-      <DangerZone />
+    <DangerZone />
+      
 
       {/* Unsaved changes bar */}
       <div

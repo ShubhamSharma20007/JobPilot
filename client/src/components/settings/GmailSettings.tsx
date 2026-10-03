@@ -7,6 +7,7 @@ export function GmailSettings() {
   const { user } = useAuth()
   if (!user) return null
   const connected = !!user.gmail_connected
+  const bounceOk = !!user.gmail_bounce_check
 
   return (
     <SettingsCard
@@ -24,12 +25,12 @@ export function GmailSettings() {
       >
         <div className="sm:flex sm:justify-end">
           {connected ? (
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium">
-              <CheckCircle2 className="size-4" /> Ready to send
-            </span>
+          bounceOk ? (
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium"><CheckCircle2 className="size-4" /> Ready to send</span>
           ) : (
-            <ConnectGmail />
-          )}
+            <ConnectGmail label="Reconnect to detect bounces" />
+          )
+        ) : <ConnectGmail />}
         </div>
       </SettingRow>
     </SettingsCard>

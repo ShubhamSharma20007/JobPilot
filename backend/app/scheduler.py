@@ -17,6 +17,8 @@ from models.recruiter_email_model import RecruiterEmail
 from models.user_model import User
 from models.user_perference import UserPreference
 from utils.gmail_client import GmailAuthError, GmailSendError, send_message
+from utils.check_bounces import check_bounces
+
 
 SETTLE_SECONDS = 10  # an address must be untouched this long before it can be sent
 MAX_ATTEMPTS = 3
@@ -385,4 +387,5 @@ def start_scheduler() -> None:
     recover_interrupted()
     scheduler.add_job(tick, "interval", seconds=60, id="tick", max_instances=1, coalesce=True)
     scheduler.add_job(send_summaries, "interval", minutes=5, id="summaries", max_instances=1, coalesce=True)
+    scheduler.add_job(check_bounces, "interval", minutes=10, id="bounces", max_instances=1, coalesce=True)
     scheduler.start()

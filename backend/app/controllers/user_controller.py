@@ -9,6 +9,7 @@ from models.user_model import User
 from schemas.resume_schema import resume_out
 from schemas.user_schema import UserResponse
 from utils.upload_file import deleteFile, uploadFile
+from utils.preferences import kick_sync
 
 MAX_RESUME_BYTES = 5 * 1024 * 1024  # matches the 5 MB limit shown in the UI
 MAX_RESUMES = 5  
@@ -114,6 +115,8 @@ def update_profile(
             deleteFile(uploaded.file_id)
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
 
+    if record:
+        kick_sync(db, user.id)
     return {
         "user": user_out(db, user),
         "resume": resume_out(record) if record else None,

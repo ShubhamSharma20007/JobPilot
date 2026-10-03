@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react"
-import { ChevronDown, RefreshCw } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { makeRows, newRow, SpreadsheetGrid } from "@/components/sheet/SpreadsheetGrid"
 import type { SheetRow } from "@/types/sheet.type"
 import { useAuth } from "@/redux/hooks/useAuth"
@@ -15,26 +8,31 @@ import { ConnectGmail } from "@/components/gmail/ConnectGmail"
 import { sheetService, type SheetResponse, type SheetRowOut } from "@/services/sheet.service"
 import { toast } from "sonner"
 import { OptionMenu } from "@/components/ui/option-menu"
+import { Link } from "react-router-dom"
+
 const SYNC_OPTIONS = [
+  { value: "5", label: "5 minutes" },
   { value: "10", label: "10 minutes" },
   { value: "30", label: "30 minutes" },
   { value: "60", label: "1 hour" },
-  { value: "120", label: "2 hours" },
   { value: "1440", label: "24 hours" },
 ]
 
 export default function Sheet() {
   const [rows, setRows] = useState<SheetRow[]>(() => makeRows(20))
   const [syncMinutes, setSyncMinutes] = useState("30")
-  const { user } = useAuth()
+  const { user, resumes } = useAuth()
   const current = SYNC_OPTIONS.find((o) => o.value === syncMinutes)
   const [loaded, setLoaded] = useState(false)
   const [statuses, setStatuses] = useState<Record<string, SheetRowOut>>({})
+  const [paused, setPaused] = useState(false)
 
-  const applyServer = (res: SheetResponse) =>
+
+
+  const applyServer = (res: SheetResponse) => {
     setStatuses(Object.fromEntries(res.rows.map((r) => [r.id, r])))
-
-
+    setPaused(!!res.paused)
+  }
 
   async function changeSync(v: string) {
     const prev = syncMinutes
@@ -55,7 +53,7 @@ export default function Sheet() {
     sheetService.list().then((res) => {
       const saved = res.rows.map((r) => ({ ...newRow(), id: r.id, recruiter: r.email }))
       setRows([...saved, ...makeRows(Math.max(5, 20 - saved.length))])
-      setSyncMinutes(String(res.syncMinutes))
+      setSyncMinutes(SYNC_OPTIONS.some(o => o.value === String(res.syncMinutes)) ? String(res.syncMinutes) : "30")
       applyServer(res)
       setLoaded(true)
     }).catch(() => toast.error("Couldn't load your sheet"))
@@ -133,6 +131,20 @@ export default function Sheet() {
           />
         </div>
       </div>
+      {paused && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed p-4">
+          <p className="text-sm">Sending is paused, so nothing will go out. Check your template, then turn off "Pause sending" in Settings.</p>
+          <Link to="/settings" className={buttonVariants({ variant: "outline" })}>Open Settings</Link>
+        </div>
+      )}
+      {user?.gmail_connected && resumes.length === 0 && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed p-4">
+          <p className="text-sm">Upload a resume so JobPilot has something to attach. Nothing is sent until you do.</p>
+          <Link to="/profile#upload-resumes" className={buttonVariants({ variant: "outline" })}>
+            Upload resume
+          </Link>
+        </div>
+      )}
       {!user?.gmail_connected && (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed p-4">
           <p className="text-sm">

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { useAuth } from "@/redux/hooks/useAuth"
 import { dispatchAuth } from "@/redux/hooks/dispatchAuth"
@@ -9,6 +9,7 @@ import { ProfileDetails } from "@/components/profile/ProfileDetails"
 import { ResumeDropzone } from "@/components/profile/ResumeDropzone"
 import { CurrentResume, ResumeList } from "@/components/profile/ResumeList"
 import { MAX_RESUMES } from "@/types/resume.type"
+import { useLocation } from "react-router-dom"
 
 function SectionHeading({ title, body }: { title: string; body: string }) {
   return (
@@ -25,10 +26,11 @@ const errorText = (e: unknown, fallback: string) => (typeof e === "string" ? e :
 export default function Profile() {
   const { user } = useAuth()
   const dispatch = useAppDispatch()
-  const { addFile,deleteFile } = dispatchAuth()
-  const {resumes} = useAuth()
+  const { addFile, deleteFile } = dispatchAuth()
+  const { resumes } = useAuth()
   const [busy, setBusy] = useState(false)
-const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const { hash } = useLocation() // get hash value #upload-resumes
   if (!user) return null
 
   const current = resumes.find((r) => r.isDefault)
@@ -36,18 +38,18 @@ const [deletingId, setDeletingId] = useState<string | null>(null)
 
 
   async function handleDelete(id: string) {
-  const name = resumes.find((r) => r.id === id)?.name ?? "resume"
-  setDeletingId(id)
-  const toastId = toast.loading(`Deleting ${name}…`)
-  try {
-    await deleteFile(id)
-    toast.success(`${name} deleted`, { id: toastId })
-  } catch (e) {
-    toast.error(`Couldn't delete ${name}`, { id: toastId, description: errorText(e, "Please try again.") })
-  } finally {
-    setDeletingId(null)
+    const name = resumes.find((r) => r.id === id)?.name ?? "resume"
+    setDeletingId(id)
+    const toastId = toast.loading(`Deleting ${name}…`)
+    try {
+      await deleteFile(id)
+      toast.success(`${name} deleted`, { id: toastId })
+    } catch (e) {
+      toast.error(`Couldn't delete ${name}`, { id: toastId, description: errorText(e, "Please try again.") })
+    } finally {
+      setDeletingId(null)
+    }
   }
-}
 
   async function addFiles(files: File[]) {
     const remaining = MAX_RESUMES - resumes.length
@@ -86,6 +88,12 @@ const [deletingId, setDeletingId] = useState<string | null>(null)
     }
   }
 
+  useEffect(() => {
+    if (!hash || !user) return
+    const el = document.getElementById(hash.slice(1))
+    el?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [hash, user])
+
   return (
     <section className="mx-auto max-w-3xl space-y-12 px-4 py-12">
       <div>
@@ -100,7 +108,7 @@ const [deletingId, setDeletingId] = useState<string | null>(null)
         <CurrentResume resume={current} />
       </div>
 
-      <div>
+      <div id="upload-resumes" className="scroll-mt-24">
         <SectionHeading
           title="Upload resumes"
           body={`Add up to ${MAX_RESUMES}, for example one for full stack roles and one for AI roles.`}
@@ -118,12 +126,12 @@ const [deletingId, setDeletingId] = useState<string | null>(null)
             title={`Your resumes (${resumes.length}/${MAX_RESUMES})`}
             body="Choose which one is the default."
           />
-         <ResumeList
-        resumes={resumes}
-        onSetDefault={makeDefault}
-        onDelete={handleDelete}
-        deletingId={deletingId}
-      />
+          <ResumeList
+            resumes={resumes}
+            onSetDefault={makeDefault}
+            onDelete={handleDelete}
+            deletingId={deletingId}
+          />
         </div>
       )}
     </section>

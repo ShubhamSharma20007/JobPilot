@@ -7,7 +7,7 @@ export interface SheetRowOut {
   sentAt: string | null
   lastError: string | null
 }
-export interface SheetResponse { rows: SheetRowOut[]; syncMinutes: number }
+export interface SheetResponse { rows: SheetRowOut[]; syncMinutes: number; paused?: boolean }
 
 class SheetService {
   async list() { return (await instance.get<SheetResponse>("/sheet")).data }

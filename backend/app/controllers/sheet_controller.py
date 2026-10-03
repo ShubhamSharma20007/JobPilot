@@ -8,9 +8,8 @@ from zoneinfo import ZoneInfo
 
 from models.recruiter_email_model import RecruiterEmail
 from models.user_perference import UserPreference
-from schemas.settings_schema import DEFAULT_BODY, DEFAULT_SUBJECT
 from utils.request_user import get_user_id
-
+from utils.preferences import ensure_preferences
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$")
 LOCKED =('sending','sent')
@@ -44,7 +43,9 @@ def list_rows(req: Request, db: Session) -> dict:
         .all()
     )
     prefs = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
-    return {"rows": [_out(r) for r in rows], "syncMinutes": prefs.sync_minutes if prefs else 30}
+    return {"rows": [_out(r) for r in rows],
+        "syncMinutes": prefs.sync_minutes if prefs else 30,
+        "paused": bool(prefs.paused) if prefs else False}
 
 
 def save_rows(req: Request, db: Session, rows: list[RowIn]) -> dict:
@@ -102,12 +103,7 @@ def save_sync(req: Request, db: Session, minutes: int | None, tz: str) -> dict:
         ZoneInfo(tz)
     except Exception:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unknown timezone")
-    user_id = get_user_id(req)
-    row = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
-    if row is None:
-        # Created paused: nothing is sent with the default template until the user has reviewed Settings
-        row = UserPreference(user_id=user_id, subject=DEFAULT_SUBJECT, body=DEFAULT_BODY, paused=True)
-        db.add(row)
+    row = ensure_preferences(db, get_user_id(req))
     if minutes is not None:
         row.sync_minutes = minutes
     row.timezone = tz
