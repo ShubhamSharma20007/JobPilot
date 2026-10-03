@@ -18,8 +18,10 @@ from config.config import config
 from models.oauth_token_model import OAuthToken
 from models.user_model import User
 from utils.crypto import encrypt
+from utils.preferences import kick_sync
 from utils.request_user import get_user_id
-from utils.user_payload import GMAIL_SEND_SCOPE
+from utils.user_payload import GMAIL_READ_SCOPE, GMAIL_SEND_SCOPE
+
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
 

@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 
 from models.user_perference import UserPreference
 from schemas.settings_schema import SettingsPayload
+from utils.preferences import kick_sync
 from utils.request_user import get_user_id
+
 
 _FIELDS = (
     "paused",
