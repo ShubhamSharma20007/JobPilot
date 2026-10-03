@@ -13,9 +13,13 @@ import { useLocation } from "react-router-dom"
 
 function SectionHeading({ title, body }: { title: string; body: string }) {
   return (
-    <div className="mb-4">
-      <h2 className="font-heading text-xl font-semibold">{title}</h2>
-      <p className="text-sm text-muted-foreground">{body}</p>
+    <div className="mb-4 flex items-stretch gap-3">
+      {/* Small gradient bar marks each section */}
+      <span aria-hidden className="w-1 shrink-0 rounded-full bg-linear-to-b from-indigo-500 to-violet-500" />
+      <div>
+        <h2 className="font-heading text-xl font-semibold">{title}</h2>
+        <p className="text-sm text-muted-foreground">{body}</p>
+      </div>
     </div>
   )
 }
@@ -32,19 +36,16 @@ export default function Profile() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const { hash } = useLocation() // get hash value #upload-resumes
 
-  
   useEffect(() => {
     if (!hash || !user) return
     const el = document.getElementById(hash.slice(1))
     el?.scrollIntoView({ behavior: "smooth", block: "start" })
   }, [hash, user])
 
-  
   if (!user) return null
 
   const current = resumes.find((r) => r.isDefault)
   const atLimit = resumes.length >= MAX_RESUMES
-
 
   async function handleDelete(id: string) {
     const name = resumes.find((r) => r.id === id)?.name ?? "resume"
@@ -98,45 +99,56 @@ export default function Profile() {
   }
 
   return (
-    <section className="mx-auto max-w-3xl space-y-12 px-4 py-12">
-      <div>
-        <h1 className="font-heading text-3xl font-bold">Profile</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Your account details and the resumes JobPilot attaches.</p>
+    <div className="relative isolate overflow-hidden">
+      {/* Soft glow behind the heading, same colours as the landing hero */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72">
+        <div className="absolute top-[-9rem] left-1/2 h-[18rem] w-[40rem] -translate-x-1/2 rounded-full bg-indigo-500/15 blur-3xl dark:bg-indigo-500/20" />
       </div>
 
-      <ProfileDetails user={user} />
-
-      <div>
-        <SectionHeading title="Current resume" body="This resume is attached to your applications by default." />
-        <CurrentResume resume={current} />
-      </div>
-
-      <div id="upload-resumes" className="scroll-mt-24">
-        <SectionHeading
-          title="Upload resumes"
-          body={`Add up to ${MAX_RESUMES}, for example one for full stack roles and one for AI roles.`}
-        />
-        <ResumeDropzone
-          onFiles={addFiles}
-          disabled={busy || atLimit}
-          message={atLimit ? `You've reached the limit of ${MAX_RESUMES} resumes. Delete one to upload another.` : undefined}
-        />
-      </div>
-
-      {resumes.length > 0 && (
+      <section className="mx-auto max-w-3xl space-y-12 px-4 py-12">
         <div>
+          <h1 className="font-heading text-3xl font-bold">
+            <span className="bg-linear-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">
+              Profile
+            </span>
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">Your account details and the resumes JobPilot attaches.</p>
+        </div>
+
+        <ProfileDetails user={user} />
+
+        <div>
+          <SectionHeading title="Current resume" body="This resume is attached to your applications by default." />
+          <CurrentResume resume={current} />
+        </div>
+
+        <div id="upload-resumes" className="scroll-mt-24">
           <SectionHeading
-            title={`Your resumes (${resumes.length}/${MAX_RESUMES})`}
-            body="Choose which one is the default."
+            title="Upload resumes"
+            body={`Add up to ${MAX_RESUMES}, for example one for full stack roles and one for AI roles.`}
           />
-          <ResumeList
-            resumes={resumes}
-            onSetDefault={makeDefault}
-            onDelete={handleDelete}
-            deletingId={deletingId}
+          <ResumeDropzone
+            onFiles={addFiles}
+            disabled={busy || atLimit}
+            message={atLimit ? `You've reached the limit of ${MAX_RESUMES} resumes. Delete one to upload another.` : undefined}
           />
         </div>
-      )}
-    </section>
+
+        {resumes.length > 0 && (
+          <div>
+            <SectionHeading
+              title={`Your resumes (${resumes.length}/${MAX_RESUMES})`}
+              body="Choose which one is the default."
+            />
+            <ResumeList
+              resumes={resumes}
+              onSetDefault={makeDefault}
+              onDelete={handleDelete}
+              deletingId={deletingId}
+            />
+          </div>
+        )}
+      </section>
+    </div>
   )
 }

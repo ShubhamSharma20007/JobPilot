@@ -18,6 +18,10 @@ const SYNC_OPTIONS = [
   { value: "1440", label: "24 hours" },
 ]
 
+// Shared look for the notice banners: dashed border with a faint indigo wash
+const banner =
+  "mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-indigo-500/30 bg-linear-to-r from-indigo-500/[0.07] via-transparent to-transparent p-4"
+
 export default function Sheet() {
   const [rows, setRows] = useState<SheetRow[]>(() => makeRows(20))
   const [syncMinutes, setSyncMinutes] = useState("30")
@@ -25,8 +29,6 @@ export default function Sheet() {
   const [loaded, setLoaded] = useState(false)
   const [statuses, setStatuses] = useState<Record<string, SheetRowOut>>({})
   const [paused, setPaused] = useState(false)
-
-
 
   const applyServer = (res: SheetResponse) => {
     setStatuses(Object.fromEntries(res.rows.map((r) => [r.id, r])))
@@ -44,8 +46,6 @@ export default function Sheet() {
       toast.error("Couldn't change the sync interval")
     }
   }
-
-
 
   // 1. Load saved rows
   useEffect(() => {
@@ -69,14 +69,12 @@ export default function Sheet() {
     return () => clearTimeout(t)
   }, [rows, loaded])
 
-
   // 3. Refresh delivered/failed columns
   useEffect(() => {
     if (!loaded) return
     const t = setInterval(() => sheetService.list().then(applyServer).catch(() => { }), 30_000)
     return () => clearInterval(t)
   }, [loaded])
-
 
   // 4. What the grid shows
   const view = rows.map((r) => {
@@ -88,73 +86,66 @@ export default function Sheet() {
   })
 
   return (
-    <section className="mx-auto max-w-5xl px-4 py-12">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-3xl font-bold">Your sheet</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Add recruiter emails in the first column. Paste a whole list at once, one email per line.
-            Sent and failed emails will appear in the other two columns.
-          </p>
+    <div className="relative isolate overflow-hidden">
+      {/* Soft glow behind the heading, same colours as the landing hero */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72">
+        <div className="absolute top-[-9rem] left-1/2 h-[18rem] w-[40rem] -translate-x-1/2 rounded-full bg-indigo-500/15 blur-3xl dark:bg-indigo-500/20" />
+      </div>
+
+      <section className="mx-auto max-w-5xl px-4 py-12">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="font-heading text-3xl font-bold">
+              Your{" "}
+              <span className="bg-linear-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">
+                sheet
+              </span>
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+              Add recruiter emails in the first column. Paste a whole list at once, one email per line.
+              Sent and failed emails will appear in the other two columns.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Sync every</span>
+            <OptionMenu
+              ariaLabel="Choose how often to check for new emails"
+              value={syncMinutes}
+              options={SYNC_OPTIONS}
+              onChange={changeSync}
+              icon={<RefreshCw className="size-3.5 text-indigo-500" />}
+              contentClassName="w-44"
+            />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Sync every</span>
-          {/* <DropdownMenu>
-            <DropdownMenuTrigger
-              aria-label="Choose how often to check for new emails"
-              className={buttonVariants({ variant: "outline" })}
-            >
-              <RefreshCw className="size-3.5" />
-              {current?.label}
-              <ChevronDown className="size-3.5 text-muted-foreground" />
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent align="end" sideOffset={6} className="w-44">
-              <DropdownMenuRadioGroup value={syncMinutes} onValueChange={(v) => setSyncMinutes(String(v))}>
-                {SYNC_OPTIONS.map((o) => (
-                  <DropdownMenuRadioItem key={o.value} value={o.value}>
-                    {o.label}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu> */}
-          <OptionMenu
-            ariaLabel="Choose how often to check for new emails"
-            value={syncMinutes}
-            options={SYNC_OPTIONS}
-            onChange={changeSync}
-            icon={<RefreshCw className="size-3.5" />}
-            contentClassName="w-44"
-          />
+        {paused && (
+          <div className={banner}>
+            <p className="text-sm">Sending is paused, so nothing will go out. Check your template, then turn off "Pause sending" in Settings.</p>
+            <Link to="/settings" className={buttonVariants({ variant: "outline" })}>Open Settings</Link>
+          </div>
+        )}
+        {user?.gmail_connected && resumes.length === 0 && (
+          <div className={banner}>
+            <p className="text-sm">Upload a resume so JobPilot has something to attach. Nothing is sent until you do.</p>
+            <Link to="/profile#upload-resumes" className={buttonVariants({ variant: "outline" })}>
+              Upload resume
+            </Link>
+          </div>
+        )}
+        {!user?.gmail_connected && (
+          <div className={banner}>
+            <p className="text-sm">
+              Connect your Gmail so JobPilot can send these applications. Nothing is sent until you do.
+            </p>
+            <ConnectGmail />
+          </div>
+        )}
+        <div className="mt-6">
+          <SpreadsheetGrid rows={view} onChange={setRows} />
         </div>
-      </div>
-      {paused && (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed p-4">
-          <p className="text-sm">Sending is paused, so nothing will go out. Check your template, then turn off "Pause sending" in Settings.</p>
-          <Link to="/settings" className={buttonVariants({ variant: "outline" })}>Open Settings</Link>
-        </div>
-      )}
-      {user?.gmail_connected && resumes.length === 0 && (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed p-4">
-          <p className="text-sm">Upload a resume so JobPilot has something to attach. Nothing is sent until you do.</p>
-          <Link to="/profile#upload-resumes" className={buttonVariants({ variant: "outline" })}>
-            Upload resume
-          </Link>
-        </div>
-      )}
-      {!user?.gmail_connected && (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed p-4">
-          <p className="text-sm">
-            Connect your Gmail so JobPilot can send these applications. Nothing is sent until you do.
-          </p>
-          <ConnectGmail />
-        </div>
-      )}
-      <div className="mt-6">
-        <SpreadsheetGrid rows={view} onChange={setRows} />
-      </div>
-    </section>
+      </section>
+    </div>
   )
 }

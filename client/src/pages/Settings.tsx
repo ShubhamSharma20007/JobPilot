@@ -11,6 +11,7 @@ import { TemplateSettings } from "@/components/settings/TemplateSettings"
 import { NotificationSettings } from "@/components/settings/NotificationSettings"
 import { DangerZone } from "@/components/settings/DangerZone"
 import { GmailSettings } from "@/components/settings/GmailSettings"
+import { gradientBtn } from "@/components/settings/primitives"
 import Loader from "@/components/Loader"
 
 function apiError(e: unknown, fallback: string) {
@@ -91,38 +92,46 @@ export default function Settings() {
   }
 
   return (
-    <>
-    <section className="mx-auto max-w-3xl space-y-8 px-4 py-12 pb-28">
-      <div>
-        <h1 className="font-heading text-3xl font-bold">Settings</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Control how and when JobPilot sends your applications.</p>
+    <div className="relative isolate overflow-hidden">
+      {/* Soft glow behind the page heading, same colours as the landing hero */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72">
+        <div className="absolute top-[-9rem] left-1/2 h-[18rem] w-[40rem] -translate-x-1/2 rounded-full bg-indigo-500/15 blur-3xl dark:bg-indigo-500/20" />
       </div>
-      <GmailSettings />
-      <SendingSettings value={draft} onChange={patch} />
-      <TemplateSettings value={draft} onChange={patch} email={user.email} name={user.name ?? user.email} />
-      <NotificationSettings value={draft} onChange={patch} />
-    <DangerZone />
-      
 
-      {/* Unsaved changes bar */}
-      <div
-        aria-hidden={!dirty}
-        className={`fixed inset-x-0 bottom-4 z-40 mx-auto flex w-[calc(100%-2rem)] max-w-xl items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 shadow-lg transition-all duration-300 ${
-          dirty ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"
-        }`}
-      >
-        <p className="text-sm">{invalid ? "Fix the highlighted fields to save." : "You have unsaved changes."}</p>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={() => setDraft(saved)} disabled={saving} tabIndex={dirty ? 0 : -1}>
-            <Undo2 /> Discard
-          </Button>
-          <Button onClick={save} disabled={invalid || saving} tabIndex={dirty ? 0 : -1}>
-            {saving ? <Loader2 className="animate-spin" /> : <Save />}
-            {saving ? "Saving…" : "Save changes"}
-          </Button>
+      <section className="mx-auto max-w-3xl space-y-8 px-4 py-12 pb-28">
+        <div>
+          <h1 className="font-heading text-3xl font-bold">
+            <span className="bg-linear-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">
+              Settings
+            </span>
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">Control how and when JobPilot sends your applications.</p>
         </div>
-      </div>
-    </section>
-    </>
+        <GmailSettings />
+        <SendingSettings value={draft} onChange={patch} />
+        <TemplateSettings value={draft} onChange={patch} email={user.email} name={user.name ?? user.email} />
+        <NotificationSettings value={draft} onChange={patch} />
+        <DangerZone />
+
+        {/* Unsaved changes bar */}
+        <div
+          aria-hidden={!dirty}
+          className={`fixed inset-x-0 bottom-4 z-40 mx-auto flex w-[calc(100%-2rem)] max-w-xl items-center justify-between gap-3 rounded-2xl border bg-card/95 px-4 py-3 shadow-lg shadow-indigo-500/10 backdrop-blur transition-all duration-300 ${
+            dirty ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"
+          }`}
+        >
+          <p className="text-sm">{invalid ? "Fix the highlighted fields to save." : "You have unsaved changes."}</p>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={() => setDraft(saved)} disabled={saving} tabIndex={dirty ? 0 : -1}>
+              <Undo2 /> Discard
+            </Button>
+            <Button className={gradientBtn} onClick={save} disabled={invalid || saving} tabIndex={dirty ? 0 : -1}>
+              {saving ? <Loader2 className="animate-spin" /> : <Save />}
+              {saving ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
+        </div>
+      </section>
+    </div>
   )
 }

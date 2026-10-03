@@ -62,17 +62,19 @@ export function ResumeDropzone({ onFiles, disabled = false, message }: Props) {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false)
       }}
       onDrop={onDrop}
-      className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-12 text-center transition outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${
+      className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-12 text-center transition outline-none focus-visible:ring-3 focus-visible:ring-indigo-500/40 ${
         disabled
           ? "cursor-not-allowed bg-muted/30 opacity-60"
           : dragging
-            ? "cursor-pointer border-primary bg-primary/5"
-            : "cursor-pointer bg-muted/30 hover:border-muted-foreground/50 hover:bg-muted/50"
+            ? "cursor-pointer border-indigo-500 bg-indigo-500/10"
+            : "cursor-pointer border-indigo-500/25 bg-linear-to-b from-indigo-500/[0.06] to-transparent hover:border-indigo-500/50 hover:from-indigo-500/10"
       }`}
     >
       <span
         className={`grid size-12 place-items-center rounded-full transition ${
-          dragging ? "scale-110 bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+          dragging
+            ? "scale-110 bg-linear-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/30"
+            : "bg-linear-to-br from-indigo-500/15 to-violet-500/15 text-indigo-500"
         }`}
       >
         <UploadCloud className="size-6" />

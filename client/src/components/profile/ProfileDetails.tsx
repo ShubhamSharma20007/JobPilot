@@ -2,6 +2,7 @@ import { useState } from "react"
 import { CalendarDays, CheckCircle2, Lock, Mail, Save, ShieldCheck, UserRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { UserAvatar } from "@/components/landing/UserAvatar"
+import { gradientBtn } from "@/components/settings/primitives"
 import type { User } from "@/types/user.type"
 
 const inputBase =
@@ -21,7 +22,7 @@ function Field({
   return (
     <label className="block space-y-1.5">
       <span className="flex items-center gap-1.5 text-sm font-medium">
-        <Icon className="size-3.5 text-muted-foreground" />
+        <Icon className="size-3.5 text-indigo-500" />
         {label}
       </span>
       {children}
@@ -59,22 +60,29 @@ export function ProfileDetails({ user }: { user: User }) {
   const dirty = name.trim() !== (user.name ?? "")
 
   return (
-    <div className="rounded-2xl border bg-card">
+    <div className="overflow-hidden rounded-2xl border bg-card shadow-lg shadow-indigo-500/5">
       {/* Header */}
-      <div className="flex flex-wrap items-center gap-4 border-b p-6">
-        <UserAvatar
-          src={user.picture ?? "https://github.com/shadcn.png"}
-          label={label}
-          initials={initials}
-          className="size-16"
-        />
+      <div className="flex flex-wrap items-center gap-4 border-b bg-linear-to-r from-indigo-500/[0.08] via-violet-500/[0.04] to-transparent p-6">
+        {/* Gradient ring around the avatar */}
+        <span className="rounded-full ">
+          <span className="block rounded-full bg-card p-0.5">
+            <UserAvatar
+              src={user.picture ?? "https://github.com/shadcn.png"}
+              label={label}
+              initials={initials}
+              className="size-16"
+            />
+          </span>
+        </span>
         <div className="min-w-0 flex-1">
           <h2 className="truncate font-heading text-xl font-semibold">{user.name ?? "Your account"}</h2>
           <p className="truncate text-sm text-muted-foreground">{user.email}</p>
         </div>
         <span
           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${
-            user.is_active ? "text-foreground" : "text-destructive"
+            user.is_active
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              : "text-destructive"
           }`}
         >
           <CheckCircle2 className="size-3.5" />
@@ -106,11 +114,15 @@ export function ProfileDetails({ user }: { user: User }) {
         </Field>
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t px-6 py-4">
+      <div className="flex items-center justify-between gap-3 border-t bg-muted/30 px-6 py-4">
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Lock className="size-3" /> Locked fields come from Google and can't be changed here.
         </p>
-        <Button disabled={!dirty || !name.trim()} onClick={() => console.log("TODO: save name", name)}>
+        <Button
+          className={gradientBtn}
+          disabled={!dirty || !name.trim()}
+          onClick={() => console.log("TODO: save name", name)}
+        >
           <Save /> Save changes
         </Button>
       </div>

@@ -85,74 +85,95 @@ export function SpreadsheetGrid({ rows, onChange }: Props) {
 
   return (
     <div>
-      <div ref={gridRef} className="max-h-[60vh] overflow-auto rounded-2xl border bg-card">
-        <table className="w-full min-w-[640px] border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-muted">
-            <tr>
-              <th className="w-12 border-b border-r" aria-label="Row" />
-              {COLUMNS.map((c) => (
-                <th key={c.key} className="border-b border-r px-3 py-2 text-left last:border-r-0">
-                  <span className="block font-medium">{c.label}</span>
-                  <span className="block text-xs font-normal text-muted-foreground">{c.hint}</span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => {
-              const status = statuses[i]
-              const bad = status === "invalid" || status === "duplicate"
-              return (
-                <tr key={row.id} className="group">
-                  <td className="relative h-9 border-r border-b bg-muted/50 text-center text-xs text-muted-foreground">
-                    <span className="group-hover:invisible">{i + 1}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeRow(i)}
-                      aria-label={`Delete row ${i + 1}`}
-                      className="absolute inset-0 hidden place-items-center text-muted-foreground hover:text-destructive group-hover:grid"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
-                  </td>
+      <div className="overflow-hidden rounded-2xl border bg-card shadow-lg shadow-indigo-500/5">
+        {/* Thin gradient accent along the top edge */}
+        <div aria-hidden className="h-0.5 bg-linear-to-r from-indigo-500 to-violet-500" />
 
-                  <td className="border-r border-b p-0">
-                    <input
-                      data-row={i}
-                      value={row.recruiter}
-                      onChange={(e) => setRecruiter(i, e.target.value)}
-                      onKeyDown={(e) => onKeyDown(e, i)}
-                      onPaste={(e) => onPaste(e, i)}
-                      aria-label={`Recruiter email, row ${i + 1}`}
-                      aria-invalid={bad}
-                      title={
-                        status === "invalid"
-                          ? "Not a valid email address"
-                          : status === "duplicate"
-                            ? "This email is already in the list"
-                            : undefined
-                      }
-                      placeholder={i === 0 ? "recruiter@company.com" : ""}
-                      spellCheck={false}
-                      autoComplete="off"
-                      className={`h-9 w-full bg-transparent px-3 outline-none focus:bg-primary/5 focus:ring-2 focus:ring-ring/60 focus:ring-inset ${
-                        bad ? "text-destructive" : ""
+        <div ref={gridRef} className="max-h-[60vh] overflow-auto">
+          <table className="w-full min-w-[640px] border-collapse text-sm">
+            <thead className="sticky top-0 z-10 bg-muted">
+              <tr>
+                <th className="w-12 border-b border-r" aria-label="Row" />
+                {COLUMNS.map((c) => (
+                  <th key={c.key} className="border-b border-r px-3 py-2 text-left last:border-r-0">
+                    <span className="block font-medium">{c.label}</span>
+                    <span className="block text-xs font-normal text-muted-foreground">{c.hint}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => {
+                const status = statuses[i]
+                const bad = status === "invalid" || status === "duplicate"
+                return (
+                  <tr key={row.id} className="group">
+                    <td className="relative h-9 border-r border-b bg-muted/50 text-center text-xs text-muted-foreground">
+                      <span className="group-hover:invisible">{i + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeRow(i)}
+                        aria-label={`Delete row ${i + 1}`}
+                        className="absolute inset-0 hidden place-items-center text-muted-foreground hover:text-destructive group-hover:grid"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </td>
+
+                    <td className="border-r border-b p-0">
+                      <input
+                        data-row={i}
+                        value={row.recruiter}
+                        onChange={(e) => setRecruiter(i, e.target.value)}
+                        onKeyDown={(e) => onKeyDown(e, i)}
+                        onPaste={(e) => onPaste(e, i)}
+                        aria-label={`Recruiter email, row ${i + 1}`}
+                        aria-invalid={bad}
+                        title={
+                          status === "invalid"
+                            ? "Not a valid email address"
+                            : status === "duplicate"
+                              ? "This email is already in the list"
+                              : undefined
+                        }
+                        placeholder={i === 0 ? "recruiter@company.com" : ""}
+                        spellCheck={false}
+                        autoComplete="off"
+                        className={`h-9 w-full bg-transparent px-3 outline-none focus:bg-indigo-500/5 focus:ring-2 focus:ring-indigo-500/50 focus:ring-inset ${
+                          bad ? "text-destructive" : ""
+                        }`}
+                      />
+                    </td>
+
+                    <td
+                      className={`h-9 border-r border-b bg-muted/30 px-3 ${
+                        row.delivered ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
                       }`}
-                    />
-                  </td>
-
-                  <td className="h-9 border-r border-b bg-muted/30 px-3 text-muted-foreground">{row.delivered}</td>
-                  <td className="h-9 border-b bg-muted/30 px-3 text-muted-foreground">{row.failed}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                    >
+                      {row.delivered}
+                    </td>
+                    <td className={`h-9 border-b bg-muted/30 px-3 ${row.failed ? "text-destructive" : "text-muted-foreground"}`}>
+                      {row.failed}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-        <p>
-          {ready} ready · {delivered} delivered · {failed} failed
+        <p className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-1.5 rounded-full bg-indigo-500" /> {ready} ready
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-1.5 rounded-full bg-emerald-500" /> {delivered} delivered
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-1.5 rounded-full bg-destructive" /> {failed} failed
+          </span>
         </p>
         <Button variant="outline" size="sm" onClick={() => onChange([...rows, ...makeRows(10)])}>
           <Plus /> Add 10 rows

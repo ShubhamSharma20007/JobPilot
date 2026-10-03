@@ -14,8 +14,8 @@ const formatDate = (iso: string) =>
 export function CurrentResume({ resume }: { resume?: Resume }) {
   if (!resume) {
     return (
-      <div className="flex items-center gap-4 rounded-2xl border border-dashed p-6">
-        <span className="grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground">
+      <div className="flex items-center gap-4 rounded-2xl border border-dashed border-indigo-500/30 bg-linear-to-r from-indigo-500/[0.06] to-transparent p-6">
+        <span className="grid size-12 place-items-center rounded-xl bg-linear-to-br from-indigo-500/15 to-violet-500/15 text-indigo-500">
           <FileText className="size-6" />
         </span>
         <div>
@@ -27,8 +27,8 @@ export function CurrentResume({ resume }: { resume?: Resume }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-2xl border bg-card p-6">
-      <span className="grid size-14 place-items-center rounded-xl bg-primary text-primary-foreground">
+    <div className="flex flex-wrap items-center gap-4 rounded-2xl border bg-linear-to-r from-indigo-500/[0.08] via-violet-500/[0.04] to-transparent bg-card p-6 shadow-lg shadow-indigo-500/5">
+      <span className="grid size-14 place-items-center rounded-xl bg-linear-to-br from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/25">
         <FileText className="size-7" />
       </span>
       <div className="min-w-0 flex-1">
@@ -65,8 +65,19 @@ export function ResumeList({ resumes, onSetDefault, onDelete, deletingId = null 
         const deleting = deletingId === r.id
 
         return (
-          <li key={r.id} className={`flex flex-wrap items-center gap-3 p-4 transition-opacity ${deleting ? "opacity-60" : ""}`}>
-            <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+          <li
+            key={r.id}
+            className={`flex flex-wrap items-center gap-3 p-4 transition-opacity ${
+              r.isDefault ? "bg-linear-to-r from-indigo-500/[0.07] to-transparent" : ""
+            } ${deleting ? "opacity-60" : ""}`}
+          >
+            <span
+              className={`grid size-10 shrink-0 place-items-center rounded-lg ${
+                r.isDefault
+                  ? "bg-linear-to-br from-indigo-500/15 to-violet-500/15 text-indigo-500"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
               <FileText className="size-5" />
             </span>
 
@@ -74,7 +85,7 @@ export function ResumeList({ resumes, onSetDefault, onDelete, deletingId = null 
               <p className="flex items-center gap-2 text-sm font-medium">
                 <span className="truncate">{r.name}</span>
                 {r.isDefault && (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-linear-to-r from-indigo-500 to-violet-500 px-2 py-0.5 text-xs text-white">
                     <Star className="size-3" /> Default
                   </span>
                 )}

@@ -3,6 +3,10 @@ import type { ReactNode } from "react"
 export const inputClass =
   "h-10 w-full min-w-0 rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-3 focus:ring-ring/50 aria-invalid:border-destructive"
 
+/** Shared accent so every gradient on the page matches the landing page */
+export const gradientBtn =
+  "border-transparent bg-linear-to-r from-indigo-500 to-violet-500 text-white shadow-sm shadow-indigo-500/20 hover:bg-linear-to-r hover:from-indigo-500 hover:to-violet-500 hover:opacity-90"
+
 export function SettingsCard({
   icon: Icon,
   title,
@@ -17,9 +21,9 @@ export function SettingsCard({
   footer?: ReactNode
 }) {
   return (
-    <section className="rounded-2xl border bg-card">
-      <header className="flex items-start gap-3 border-b p-6">
-        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+    <section className="overflow-hidden rounded-2xl border bg-card">
+      <header className="relative flex items-start gap-3 border-b bg-linear-to-r from-indigo-500/[0.06] via-transparent to-transparent p-6">
+        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-linear-to-br from-indigo-500/15 to-violet-500/15 text-indigo-500 ring-1 ring-indigo-500/15">
           <Icon className="size-5" />
         </span>
         <div>
@@ -28,7 +32,7 @@ export function SettingsCard({
         </div>
       </header>
       <div className="divide-y">{children}</div>
-      {footer && <div className="border-t px-6 py-4">{footer}</div>}
+      {footer && <div className="border-t bg-muted/30 px-6 py-4">{footer}</div>}
     </section>
   )
 }
@@ -80,7 +84,7 @@ export function Switch({
       aria-label={label}
       onClick={() => onChange(!checked)}
       className={`relative h-6 w-11 shrink-0 rounded-full border transition outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${
-        checked ? "border-transparent bg-primary" : "bg-muted"
+        checked ? "border-transparent bg-linear-to-r from-indigo-500 to-violet-500" : "bg-muted"
       }`}
     >
       <span
