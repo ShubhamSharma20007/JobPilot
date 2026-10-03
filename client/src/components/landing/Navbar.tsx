@@ -10,6 +10,7 @@ const LINKS = [
   { href: "#pipeline", label: "Flow" },
   { href: "#features", label: "Features" },
   { href: "#faq", label: "FAQ" },
+  { href: "#coming-soon", label: "Coming soon" },
 ]
 
 export function Navbar() {

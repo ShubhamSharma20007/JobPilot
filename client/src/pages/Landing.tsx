@@ -1,4 +1,5 @@
 import { Hero, Stats, HowItWorks, Pipeline, Features, Faq, FinalCta } from "@/components/landing/Sections"
+import { ComingSoon } from "@/components/landing/ComingSoon"
 
 export default function Landing() {
   return (
@@ -8,6 +9,7 @@ export default function Landing() {
       <HowItWorks />
       <Pipeline />
       <Features />
+      <ComingSoon />
       <Faq />
       <FinalCta />
     </>
