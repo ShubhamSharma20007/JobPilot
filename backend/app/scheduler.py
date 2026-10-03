@@ -199,6 +199,7 @@ def sync_user(user_id) -> None:
             if not _in_window(prefs):
                 print("sync_user: outside window", prefs.timezone, prefs.window_start, prefs.window_end)
                 _retry_soon(db, user_id); return
+            quota = prefs.daily_limit - _sent_today(db, prefs)
             if quota <= 0:
                 print("sync_user: daily limit reached", user_id); return
 

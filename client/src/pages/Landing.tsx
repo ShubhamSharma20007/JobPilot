@@ -1,13 +1,15 @@
-import { Hero, HowItWorks, Pipeline, Features, Faq } from "@/components/landing/Sections"
+import { Hero, Stats, HowItWorks, Pipeline, Features, Faq, FinalCta } from "@/components/landing/Sections"
 
 export default function Landing() {
   return (
     <>
       <Hero />
+      <Stats />
       <HowItWorks />
       <Pipeline />
       <Features />
       <Faq />
+      <FinalCta />
     </>
   )
 }

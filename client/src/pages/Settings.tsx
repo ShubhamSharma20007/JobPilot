@@ -11,8 +11,8 @@ import { TemplateSettings } from "@/components/settings/TemplateSettings"
 import { NotificationSettings } from "@/components/settings/NotificationSettings"
 import { DangerZone } from "@/components/settings/DangerZone"
 import { GmailSettings } from "@/components/settings/GmailSettings"
+import Loader from "@/components/Loader"
 
-// Handles both plain errors and FastAPI/Pydantic validation errors (422)
 function apiError(e: unknown, fallback: string) {
   if (isAxiosError(e)) {
     const detail = e.response?.data?.detail
@@ -55,13 +55,7 @@ export default function Settings() {
 
   // Show a retry instead of the form if loading failed, so a user can't
   // accidentally save defaults over their real settings.
-  if (loading) {
-    return (
-      <div className="grid min-h-[60vh] place-items-center text-muted-foreground">
-        <Loader2 className="size-6 animate-spin" aria-label="Loading settings" />
-      </div>
-    )
-  }
+  if (loading) return <Loader />
   if (loadFailed || !saved || !draft) {
     return (
       <div className="mx-auto grid min-h-[60vh] max-w-sm place-items-center gap-3 px-4 text-center">

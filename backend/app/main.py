@@ -50,7 +50,7 @@ async def root():
     return {"message": "Server is running!"}
 
 
-@app.get("/db-check")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def db_check():
     try:
         with engine.connect() as conn:

@@ -78,7 +78,7 @@ async function sendTest() {
               ? `Send a filled-in sample to ${email} before real emails go out.`
               : "Connect Gmail at the top of this page to send a test."}
           </p>
-          <Button variant="outline" onClick={sendTest} disabled={!canSend || sending}>
+          <Button variant="outline" onClick={sendTest} disabled={!canSend || sending} className={`bg-indigo-600 text-white ${!sending ? 'cursor-pointer':''}`}>
             {sending ? <Loader2 className="animate-spin" /> : <Send />}
             {sending ? "Sending…" : "Send test to me"}
           </Button>

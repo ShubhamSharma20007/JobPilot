@@ -1,3 +1,5 @@
+import { Eye, Gauge, Mail, RefreshCw, ShieldCheck, Table } from "lucide-react"
+
 export const APP = {
   name: "JobPilot",
   headline: "Write your job application email once. JobPilot sends the rest.",
@@ -5,19 +7,19 @@ export const APP = {
 }
 
 export const STEPS = [
-  { title: "Sign in with Google", body: "Allow Gmail sending and a Google Sheet. JobPilot creates the sheet for you." },
-  { title: "Add your resume and template", body: "Upload a PDF, edit your email with placeholders like {{company}} and {{role}}, and send a test to yourself." },
-  { title: "Add recruiter emails", body: "Paste them, upload a CSV, or drop them into the emails tab of your sheet." },
-  { title: "JobPilot sends and tracks", body: "Emails go out one by one at a safe pace. Each result lands in your success or failure tab." },
+  { title: "Sign in and connect Gmail", body: "Allow JobPilot to send mail from your own account. Nothing goes out until you say so." },
+  { title: "Add your resume and template", body: "Upload a PDF, write your email with placeholders like {{company}} and {{role}}, and send a test to yourself." },
+  { title: "Paste recruiter emails", body: "Paste a whole list into your sheet, one per line. Bad and duplicate addresses are flagged instantly." },
+  { title: "JobPilot sends and tracks", body: "Emails go out one by one at a safe pace. Sent and failed results appear right in your sheet." },
 ]
 
 export const FEATURES = [
-  { title: "Sent from your own Gmail", body: "Recruiters see your address, not ours. One recipient per message, with your PDF resume attached.", span: "md:col-span-2" },
-  { title: "Never emails twice", body: "Duplicate addresses are skipped, with a cool-down you can set. A crash mid-run never causes a repeat send.", span: "" },
-  { title: "Paced like a person", body: "A daily limit (30 to 50 by default), random 30 to 120 second gaps and a send window you choose.", span: "" },
-  { title: "Your sheet shows everything", body: "Three tabs: emails, success and failure. Failures include the reason and the number of attempts.", span: "md:col-span-2" },
-  { title: "Preview and test first", body: "See your template filled with sample data and send it to yourself before any recruiter gets it.", span: "md:col-span-2" },
-  { title: "Retries and checks", body: "Bad addresses are caught before sending. Temporary errors retry up to 3 times with backoff.", span: "" },
+  { icon: Mail, title: "Sent from your own Gmail", body: "Recruiters see your address, not ours. One recipient per message, with your PDF resume attached.", span: "md:col-span-2" },
+  { icon: ShieldCheck, title: "Never emails twice", body: "Duplicate addresses are skipped, with a cool-down you can set. A crash mid-run never causes a repeat send.", span: "" },
+  { icon: Gauge, title: "Paced like a person", body: "A daily limit (30 to 50 by default), random 30 to 120 second gaps and a send window you choose.", span: "" },
+  { icon: Table, title: "Your sheet shows everything", body: "Three tabs: emails, success and failure. Failures include the reason and the number of attempts.", span: "md:col-span-2" },
+  { icon: Eye, title: "Preview and test first", body: "See your template filled with sample data and send it to yourself before any recruiter gets it.", span: "md:col-span-2" },
+  { icon: RefreshCw, title: "Retries and checks", body: "Bad addresses are caught before sending. Temporary errors retry up to 3 times with backoff.", span: "" },
 ]
 
 export const FLOW = [
@@ -48,3 +50,11 @@ export const SOCIALS = {
   linkedin: "https://www.linkedin.com/in/your-handle",
   twitter: "https://x.com/your-handle",
 }
+
+
+export const STATS = [
+  { value: "30–50", label: "emails a day by default" },
+  { value: "30–120s", label: "random gap between sends" },
+  { value: "3×", label: "retries with backoff" },
+  { value: "0", label: "duplicate sends" },
+]

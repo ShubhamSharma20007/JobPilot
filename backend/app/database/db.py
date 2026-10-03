@@ -18,7 +18,11 @@ else:
         f"@{config['DB_HOST']}:{config['DB_PORT']}/{config['DB_DATABASE']}"
     )
 
-engine = create_engine(CONNECTION_STRING, pool_pre_ping=True, echo=False)
+engine = create_engine(CONNECTION_STRING,
+ pool_pre_ping=True,
+ echo=True ,
+ pool_recycle=300,
+ connect_args={"prepare_threshold": None})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
@@ -29,4 +33,4 @@ def get_db():
     try:
         yield db
     finally:
-        db.close()
+        db.close()
