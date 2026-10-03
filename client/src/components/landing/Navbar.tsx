@@ -38,17 +38,20 @@ export function Navbar() {
           ))}
         </div>
         <div className="flex items-center gap-2">
-          {!initialized ? (
-            <div className="h-10 w-28" />
-          ) : user ? (
-            <UserMenu />
-          ) : (
-            <>
-              <ThemeToggle />
-              <GoogleSignIn />
-            </>
-          )}
-        </div>
+  {!initialized ? (
+    <>
+      <ThemeToggle />
+      <div className="h-10 w-[180px]" />
+    </>
+  ) : user ? (
+    <UserMenu />
+  ) : (
+    <>
+      <ThemeToggle />
+      <GoogleSignIn />
+    </>
+  )}
+</div>
       </nav>
     </header>
   )
