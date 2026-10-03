@@ -21,7 +21,11 @@ app = FastAPI(
 app.add_middleware(BaseHTTPMiddleware, dispatch=auth_middleware)  # inner
 app.add_middleware(                                               # outer, added last
     CORSMiddleware,
-    allow_origins=[config["CLIENT_URL"]],
+    allow_origins=[
+        config["CLIENT_URL"],
+        'https://jobpilot-1bc0e.firebaseapp.com',
+        'https://jobpilot-1bc0e.web.app'
+    ],
     allow_credentials=True,
     allow_methods=["GET","POST","DELETE","PUT","PATCH"],
     allow_headers=["*"],
