@@ -9,35 +9,39 @@ import Settings from "@/pages/Settings"
 import Sheet from "./pages/Sheet"
 import { Toaster } from "./components/ui/sonner"
 import { dispatchAuth } from "./redux/hooks/dispatchAuth"
+import { Privacy, Terms } from "./pages/Legal"
 const App = () => {
   const dispatch = useAppDispatch()
-  const {fetchCurrentUser} = dispatchAuth()
+  const { fetchCurrentUser } = dispatchAuth()
 
   useEffect(() => {
-   fetchCurrentUser()
+    fetchCurrentUser()
   }, [dispatch])
 
   return (
     <>
-    <Toaster
-    closeButton
-    toastOptions={{
-      classNames:{
-        closeButton:'!right-0 !left-auto !translate-x-0'
-      }
-    }}
-    />
-    <Routes>
-      <Route element={<Layout />}>
-        <Route index element={<Landing />} />
-        <Route element={<ProtectedRoute />}>
-          <Route path="profile" element={<Profile />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="sheet" element={<Sheet />} />
+      <Toaster
+        closeButton
+        toastOptions={{
+          classNames: {
+            closeButton: '!right-0 !left-auto !translate-x-0'
+          }
+        }}
+      />
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<Landing />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="profile" element={<Profile />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="sheet" element={<Sheet />} />
+          </Route>
+          <Route index element={<Landing />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+      </Routes>
     </>
   )
 }
