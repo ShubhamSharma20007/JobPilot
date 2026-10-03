@@ -19,8 +19,9 @@ export function GoogleSignIn({ size = "medium" }: { size?: "small" | "medium" | 
   }
 
   return (
+     <div style={{ colorScheme: "light" }}>
     <GoogleLogin
-      key={theme} // re-render Google's button when theme changes
+      key={theme}
       onSuccess={handleGoogleLogin}
       onError={() => alert("Login failed. Please try again.")}
       theme={theme === "dark" ? "filled_black" : "outline"}
@@ -28,5 +29,6 @@ export function GoogleSignIn({ size = "medium" }: { size?: "small" | "medium" | 
       shape="pill"
       text="signin_with"
     />
+  </div>
   )
 }
