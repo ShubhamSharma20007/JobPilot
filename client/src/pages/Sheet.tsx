@@ -22,7 +22,6 @@ export default function Sheet() {
   const [rows, setRows] = useState<SheetRow[]>(() => makeRows(20))
   const [syncMinutes, setSyncMinutes] = useState("30")
   const { user, resumes } = useAuth()
-  const current = SYNC_OPTIONS.find((o) => o.value === syncMinutes)
   const [loaded, setLoaded] = useState(false)
   const [statuses, setStatuses] = useState<Record<string, SheetRowOut>>({})
   const [paused, setPaused] = useState(false)

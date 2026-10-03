@@ -24,7 +24,6 @@ function fill(text: string, name: string) {
 
 export function TemplateSettings({ value, onChange, email, name }: Props) {
   const [tab, setTab] = useState<"edit" | "preview">("edit")
-  const[sent,setSent] = useState(false)
   const [sending, setSending] = useState(false)
   const bodyRef = useRef<HTMLTextAreaElement>(null)
   const { user } = useAuth()
