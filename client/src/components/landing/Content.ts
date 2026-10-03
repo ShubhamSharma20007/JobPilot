@@ -23,7 +23,7 @@ export const FEATURES = [
 ]
 
 export const FLOW = [
-  { title: "Your list", sub: "Google Sheet, CSV or pasted emails" },
+  { title: "Your list", sub: "Typed or pasted into your sheet" },
   { title: "Check and dedupe", sub: "Valid addresses only, no repeats" },
   { title: "Paced queue", sub: "Daily limit, delays, send window" },
   { title: "Your Gmail", sub: "Template and resume attached" },

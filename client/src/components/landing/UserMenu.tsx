@@ -73,7 +73,7 @@ export function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuItem className={itemClass} onClick={() => navigate("/sheet")}>
           <TableIcon className={iconClass} />
-          Sheet
+          Your Sheet
         </DropdownMenuItem>
         <DropdownMenuItem className={itemClass} onClick={() => navigate("/settings")}>
           <Settings className={iconClass} />
