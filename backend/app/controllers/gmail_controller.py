@@ -108,22 +108,19 @@ def connect_gmail(req: Request, db: Session, code: str) -> dict:
             row = OAuthToken(user_id=user.id)
             db.add(row)
         row.access_token_enc = access_enc
-        if refresh_enc:  # otherwise keep the one we already have
+        if refresh_enc:
             row.refresh_token_enc = refresh_enc
         row.scopes = " ".join(sorted(granted))
         row.expires_at = datetime.now(timezone.utc) + timedelta(seconds=int(tokens.get("expires_in", 3600)))
         db.commit()
-        was_paused = bool(row.paused) if row else False 
-        if was_paused and not body.paused:
-            kick_sync(db, user_id)
-       
     except SQLAlchemyError as e:
         db.rollback()
         print("DB error:", e)
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
-        
 
-    return {"gmail_connected": True, "gmail_bounce_check": "https://www.googleapis.com/auth/gmail.readonly" in granted}
+    kick_sync(db, user.id) 
+
+    return {"gmail_connected": True, "gmail_bounce_check": GMAIL_READ_SCOPE in granted}
 
 
 

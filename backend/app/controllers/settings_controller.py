@@ -48,6 +48,8 @@ def save_settings(req: Request, db: Session, body: SettingsPayload) -> dict:
 
     try:
         row = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
+        was_paused = bool(row.paused) if row else False
+
         if row is None:
             row = UserPreference(user_id=user_id)
             db.add(row)
@@ -61,5 +63,8 @@ def save_settings(req: Request, db: Session, body: SettingsPayload) -> dict:
         db.rollback()
         print("DB error:", e)  # replace with real logging
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
+
+    if was_paused and not body.paused:
+        kick_sync(db, user_id)
 
     return _out(_from_row(row))
