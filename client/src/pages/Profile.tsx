@@ -31,6 +31,15 @@ export default function Profile() {
   const [busy, setBusy] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const { hash } = useLocation() // get hash value #upload-resumes
+
+  
+  useEffect(() => {
+    if (!hash || !user) return
+    const el = document.getElementById(hash.slice(1))
+    el?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [hash, user])
+
+  
   if (!user) return null
 
   const current = resumes.find((r) => r.isDefault)
@@ -87,12 +96,6 @@ export default function Profile() {
       toast.error("Couldn't change your default resume", { description: errorText(e, "Please try again.") })
     }
   }
-
-  useEffect(() => {
-    if (!hash || !user) return
-    const el = document.getElementById(hash.slice(1))
-    el?.scrollIntoView({ behavior: "smooth", block: "start" })
-  }, [hash, user])
 
   return (
     <section className="mx-auto max-w-3xl space-y-12 px-4 py-12">
