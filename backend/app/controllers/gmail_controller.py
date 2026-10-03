@@ -8,19 +8,18 @@ from utils.gmail_client import GmailAuthError, GmailSendError, send_message
 from datetime import datetime, timedelta, timezone
 
 import requests
-from fastapi import HTTPException, Request, status
+from fastapi import HTTPException, Request, status,BackgroundTasks
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-
+from database.db import SessionLocal
 from config.config import config
 from models.oauth_token_model import OAuthToken
 from models.user_model import User
 from utils.crypto import encrypt
 from utils.request_user import get_user_id
 from utils.user_payload import GMAIL_SEND_SCOPE
-
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
 
@@ -121,6 +120,44 @@ def connect_gmail(req: Request, db: Session, code: str) -> dict:
 
     return {"gmail_connected": True}
 
+
+
+def _deliver_test_email(user_id, subject: str, body: str) -> None:
+    """Runs after the response. Opens its own DB session, since the request's is closed."""
+    db = SessionLocal()
+    try:
+        user = db.get(User, user_id)
+        row = db.get(OAuthToken, user_id)
+        if not user or not row:
+            return
+
+        display_name = user.name or user.email
+        msg = EmailMessage()
+        msg["From"] = formataddr((display_name.replace("\n", " ").replace("\r", " "), user.email))
+        msg["To"] = user.email
+        msg["Subject"] = "[Test] " + _fill(subject, display_name).replace("\r", " ").replace("\n", " ")
+        msg.set_content(_fill(body, display_name))
+
+        resume = _default_resume(db, user)
+        if resume:
+            data, filename = resume
+            msg.add_attachment(data, maintype="application", subtype="pdf", filename=filename)
+
+        try:
+            send_message(db, row, msg)
+        except GmailAuthError:
+            # Tokens unusable: clear them so the UI offers "Connect Gmail" again
+            db.delete(row)
+            db.commit()
+            print("Test email: Gmail access expired for user", user_id)
+        except GmailSendError as e:
+            print("Test email failed:", e)
+    except Exception as e:  # never let a background task crash silently
+        db.rollback()
+        print("Test email error:", e)
+    finally:
+        db.close()
+
 def _fill(text: str, name: str) -> str:
     """Same sample data the Preview tab uses."""
     sample = {
@@ -153,7 +190,7 @@ def _default_resume(db: Session, user: User) -> tuple[bytes, str] | None:
     return res.content, f.original_name
 
 
-def send_test_email(req: Request, db: Session, subject: str, body: str) -> dict:
+def send_test_email(req: Request, db: Session,background_tasks: BackgroundTasks, subject: str, body: str) -> dict:
     user = db.get(User, get_user_id(req))
     if not user:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
@@ -162,35 +199,6 @@ def send_test_email(req: Request, db: Session, subject: str, body: str) -> dict:
     if not row or not row.refresh_token_enc or GMAIL_SEND_SCOPE not in (row.scopes or "").split():
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Connect your Gmail first.")
 
-    display_name = user.name or user.email
-    msg = EmailMessage()
-    msg["From"] = formataddr((display_name.replace("\n", " ").replace("\r", " "), user.email))
-    msg["To"] = user.email
-    msg["Subject"] = "[Test] " + _fill(subject, display_name).replace("\r", " ").replace("\n", " ")
-    msg.set_content(_fill(body, display_name))
+    background_tasks.add_task(_deliver_test_email, user.id, subject, body)
 
-    resume = _default_resume(db, user)
-    if resume:
-        data, filename = resume
-        #  attach the resume 
-        msg.add_attachment(data, maintype="application", subtype="pdf", filename=filename)  
-        
-
-    try:
-        send_message(db, row, msg)
-    except GmailAuthError:
-        # Tokens are no longer usable: clear them so the UI offers "Connect Gmail" again
-        try:
-            db.delete(row)
-            db.commit()
-        except SQLAlchemyError:
-            db.rollback()
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Gmail access expired. Please connect Gmail again.")
-    except GmailSendError as e:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(e))
-    except (ValueError, SQLAlchemyError) as e:
-        db.rollback()
-        print("Test email error:", e)
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Couldn't build the test email.")
-
-    return {"sent_to": user.email, "attached_resume": resume[1] if resume else None}
+    return {"sent_to": user.email, "queued": True}

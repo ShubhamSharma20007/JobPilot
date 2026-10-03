@@ -2,7 +2,7 @@ import { instance } from "../utils/instance"
 
 export interface TestEmailResult {
   sent_to: string
-  attached_resume: string | null
+  queued: boolean
 }
 
 class GmailService {

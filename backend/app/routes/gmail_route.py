@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request, status,BackgroundTasks
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -23,5 +23,5 @@ def connect(body: ConnectBody, request: Request, db: Session = Depends(get_db)):
 
 
 @router.post("/test", status_code=status.HTTP_200_OK)
-def test_email(body: TestEmailBody, request: Request, db: Session = Depends(get_db)):
-    return send_test_email(request, db, body.subject.strip(), body.body.strip())
+def test_email(body: TestEmailBody, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    return send_test_email(request, db,background_tasks, body.subject.strip(), body.body.strip())

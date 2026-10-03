@@ -48,10 +48,8 @@ async function sendTest() {
     setSending(true)
     try {
       const res = await gmailService.sendTest(value.subject, value.body)
-      toast.success(`Test email sent to ${res.sent_to}`, {
-        description: res.attached_resume
-          ? `Attached: ${res.attached_resume}`
-          : "No resume attached. Upload one on your Profile page.",
+      toast.success(`Test email on its way to ${res.sent_to}`, {
+        description: "It should arrive in a few seconds. Check your inbox.",
       })
     } catch (e) {
       const detail = isAxiosError(e) ? e.response?.data?.detail : null

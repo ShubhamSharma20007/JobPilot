@@ -1,7 +1,7 @@
 import uuid
 from datetime import time
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, Time
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, Time,Date
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
@@ -41,3 +41,8 @@ class UserPreference(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    sync_minutes = Column(Integer, nullable=False, default=30)
+    last_sync_at = Column(DateTime(timezone=True), nullable=True)
+    timezone = Column(String(64), nullable=False, default="UTC")
+    last_summary_on = Column(Date, nullable=True)

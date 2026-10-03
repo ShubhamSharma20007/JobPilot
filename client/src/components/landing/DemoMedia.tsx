@@ -1,8 +1,11 @@
 import { useState } from "react"
+import { useTheme } from "@/context/theme-context"
 
-
-export function DemoMedia({ src = "/demo.gif", alt = "Product demo" }: { src?: string; alt?: string }) {
+export function DemoMedia({ alt = "Product demo" }: { alt?: string }) {
+  const { theme } = useTheme()
   const [failed, setFailed] = useState(false)
+  const src = theme === "dark" ? "/demo-dark.gif" : "/demo-light.gif"
+
   return (
     <div className="overflow-hidden rounded-2xl border bg-card shadow-2xl shadow-primary/10">
       <div className="flex items-center gap-1.5 border-b bg-muted px-4 py-3">
@@ -20,11 +23,17 @@ export function DemoMedia({ src = "/demo.gif", alt = "Product demo" }: { src?: s
                 style={{ width: `${w * 100}%`, animationDelay: `${i * 200}ms` }}
               />
             ))}
-            <div className="h-9 w-32 animate-pulse rounded-lg bg-primary/80 motion-reduce:animate-none" />
+            <div className= "h-9 w-32 animate-pulse rounded-lg bg-primary/80 motion-reduce:animate-none" />
           </div>
         </div>
       ) : (
-        <img src={src} alt={alt} onError={() => setFailed(true)} className="aspect-video w-full object-cover" />
+        <img
+          key={src} // restarts the animation from the beginning when the theme changes
+          src={src}
+          alt={alt}
+          onError={() => setFailed(true)}
+          className="aspect-video w-full object-cover"
+        />
       )}
     </div>
   )
