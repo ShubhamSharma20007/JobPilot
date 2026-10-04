@@ -23,5 +23,5 @@ def get_me(request: Request, db: Session = Depends(get_db)):
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
-def logout_user():
-    return logout()
+def logout_user(request:Request):
+    return logout(request)

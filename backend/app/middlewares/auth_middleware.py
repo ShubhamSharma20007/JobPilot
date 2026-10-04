@@ -35,4 +35,5 @@ async def auth_middleware(request: Request, call_next):
         return _unauthorized("Invalid authentication token")
 
     request.state.user_id = user_id
+    request.state.token_exp = payload.get("exp")
     return await call_next(request)

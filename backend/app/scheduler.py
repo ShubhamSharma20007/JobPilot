@@ -18,7 +18,7 @@ from models.user_model import User
 from models.user_perference import UserPreference
 from utils.gmail_client import GmailAuthError, GmailSendError, send_message
 from utils.check_bounces import check_bounces
-
+from utils.cache import invalidate_profile
 
 SETTLE_SECONDS = 10  # an address must be untouched this long before it can be sent
 MAX_ATTEMPTS = 3
@@ -268,6 +268,7 @@ def sync_user(user_id) -> None:
                     _release(db, rest)
                     db.delete(token)  # UI shows "Connect Gmail" again
                     db.commit()
+                    invalidate_profile(user_id)
                     return
                 except GmailSendError as e:
                     attempts = db.get(RecruiterEmail, row_id).attempts

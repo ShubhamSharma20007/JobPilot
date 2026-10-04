@@ -6,7 +6,7 @@ from models.user_perference import UserPreference
 from schemas.settings_schema import SettingsPayload
 from utils.preferences import kick_sync
 from utils.request_user import get_user_id
-
+from utils.cache import cache_get, cache_set, cache_delete, settings_key
 
 _FIELDS = (
     "paused",
@@ -34,14 +34,20 @@ def _from_row(row: UserPreference) -> SettingsPayload:
 def get_settings(req: Request, db: Session) -> dict:
     user_id = get_user_id(req)
 
+    cached = cache_get(settings_key(user_id))
+    if cached is not None:
+        return cached
+
     try:
         row = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
     except SQLAlchemyError as e:
         print("DB error:", e)
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
 
-    # Nothing saved yet: return the defaults without writing anything
-    return _out(_from_row(row) if row else SettingsPayload())
+    out = _out(_from_row(row) if row else SettingsPayload())
+    if row:                                   
+        cache_set(settings_key(user_id), out, 3600)
+    return out
 
 
 def save_settings(req: Request, db: Session, body: SettingsPayload) -> dict:
@@ -61,6 +67,7 @@ def save_settings(req: Request, db: Session, body: SettingsPayload) -> dict:
 
         db.commit()
         db.refresh(row)
+        cache_delete(settings_key(user_id))
     except SQLAlchemyError as e:
         db.rollback()
         print("DB error:", e)  # replace with real logging

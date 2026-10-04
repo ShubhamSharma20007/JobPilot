@@ -3,9 +3,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from controllers.gmail_controller import connect_gmail, disconnect_gmail, send_test_email
 from database.db import get_db
-
+from utils.cache import rate_limit
 router = APIRouter()
-
 
 class ConnectBody(BaseModel):
     code: str = Field(min_length=1, max_length=2048)
@@ -16,12 +15,12 @@ class TestEmailBody(BaseModel):
     body: str = Field(min_length=1, max_length=10_000)
 
 
-@router.post("/connect", status_code=status.HTTP_200_OK)
+@router.post("/connect", dependencies=[Depends(rate_limit("gmail_connect", 10, 3600))], status_code=status.HTTP_200_OK)
 def connect(body: ConnectBody, request: Request, db: Session = Depends(get_db)):
     return connect_gmail(request, db, body.code)
 
 
-@router.post("/test", status_code=status.HTTP_200_OK)
+@router.post("/test", dependencies=[Depends(rate_limit("gmail_test", 5, 3600))], status_code=status.HTTP_200_OK)
 def test_email(body: TestEmailBody, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     return send_test_email(request, db,background_tasks, body.subject.strip(), body.body.strip())
 
@@ -29,3 +28,5 @@ def test_email(body: TestEmailBody, request: Request, background_tasks: Backgrou
 @router.post("/disconnect", status_code=status.HTTP_200_OK)
 def disconnect(request: Request, db: Session = Depends(get_db)):
     return disconnect_gmail(request, db)
+
+

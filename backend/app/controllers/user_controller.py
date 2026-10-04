@@ -114,7 +114,7 @@ def update_profile(
         if uploaded:
             deleteFile(uploaded.file_id)
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
-
+    invalidate_profile(user.id)
     if record:
         kick_sync(db, user.id)
     return {

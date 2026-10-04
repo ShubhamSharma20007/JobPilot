@@ -15,6 +15,9 @@ from schemas.user_schema import UserResponse
 from utils.jwt import create_access_token
 import uuid
 from utils.preferences import ensure_preferences
+from jose import JWTError
+from utils.jwt import create_access_token, decode_access_token
+from utils.cache import cache_get, cache_set, cache_delete, profile_key, session_ttl, invalidate_profile
 
 def _verify_google_token(token: str) -> dict:
     try:
@@ -72,7 +75,7 @@ def _find_or_create_user(db: Session, info: dict) -> User:
 def google_verify(token: str, db: Session) -> JSONResponse:
     info = _verify_google_token(token)
     user = _find_or_create_user(db, info)
-
+    invalidate_profile(user.id) # if user is already logged in and changed his profile then invalidate the profile
     access_token = create_access_token({
         "sub": str(user.id),
         "email": user.email,
@@ -86,6 +89,12 @@ def google_verify(token: str, db: Session) -> JSONResponse:
 def currentUser(req: Request, db: Session):
     try:
         user_id = uuid.UUID(req.state.user_id)
+        
+        # check in redis
+        cached = cache_get(profile_key(user_id))
+        if cached is not None:
+            return cached
+
     except (ValueError, AttributeError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -117,17 +126,23 @@ def currentUser(req: Request, db: Session):
     ensure_preferences(db, user.id)  # setting created on first login
     data = user_out(db, user)
     data["resumes"] = [resume_out(f) for f in files]
+    cache_set(profile_key(user_id), data, session_ttl(req))
     return data
 
-def logout():
-    response =  JSONResponse(
-        content={
-            'message':'Logged out successfully'
-        }
-    )
+def logout(req: Request):
+    token = req.cookies.get(COOKIE_OPTIONS["key"])
+    if token:
+        try:
+            uid = decode_access_token(token).get("sub")
+            if uid:
+                cache_delete(profile_key(uid))
+        except JWTError:
+            pass  
+
+    response = JSONResponse(content={"message": "Logged out successfully"})
     response.delete_cookie(
         key=COOKIE_OPTIONS["key"],
-        path=COOKIE_OPTIONS['path'],
+        path=COOKIE_OPTIONS["path"],
         httponly=COOKIE_OPTIONS["httponly"],
         secure=COOKIE_OPTIONS["secure"],
         samesite=COOKIE_OPTIONS["samesite"],

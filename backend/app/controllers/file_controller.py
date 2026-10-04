@@ -29,6 +29,7 @@ def make_default(file_id: uuid.UUID, req: Request, db: Session) -> dict:
     file = _owned_file(db, user_id, file_id)
 
     if file.is_default:
+        invalidate_profile(user_id)
         return resume_out(file)
 
     try:
@@ -44,7 +45,7 @@ def make_default(file_id: uuid.UUID, req: Request, db: Session) -> dict:
         db.rollback()
         print("DB error:", e)
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
-
+    invalidate_profile(user_id)
     return resume_out(file)
 
 
@@ -81,7 +82,9 @@ def delete_file(file_id: uuid.UUID, req: Request, db: Session) -> dict:
 
     # After the commit, so a failure here never loses the user's data.
     # deleteFile already swallows and logs its own errors.
+    invalidate_profile(user_id)
     if storage_id:
+        invalidate_profile(user_id)
         deleteFile(storage_id)
 
     return {"id": str(deleted_id), "newDefaultId": new_default_id}

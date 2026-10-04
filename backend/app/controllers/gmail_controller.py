@@ -121,7 +121,7 @@ def connect_gmail(req: Request, db: Session, code: str) -> dict:
         db.rollback()
         print("DB error:", e)
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
-
+    invalidate_profile(user.id)
     kick_sync(db, user.id) 
 
     return {"gmail_connected": True, "gmail_bounce_check": GMAIL_READ_SCOPE in granted}
@@ -155,6 +155,7 @@ def _deliver_test_email(user_id, subject: str, body: str) -> None:
             # Tokens unusable: clear them so the UI offers "Connect Gmail" again
             db.delete(row)
             db.commit()
+            invalidate_profile(user_id)
             print("Test email: Gmail access expired for user", user_id)
         except GmailSendError as e:
             print("Test email failed:", e)
@@ -251,6 +252,6 @@ def disconnect_gmail(req: Request, db: Session) -> dict:
             db.rollback()
             print("DB error:", e)
             raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
- 
+    invalidate_profile(user.id)
     return {"gmail_connected": False, "gmail_bounce_check": False}
  

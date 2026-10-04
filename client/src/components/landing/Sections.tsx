@@ -9,6 +9,7 @@ import { GoogleSignIn } from "./GoogleSignIn"
 import { SocialLinks } from "./SocialLinks"
 import { Reveal } from "./Reveal"
 import { useState } from "react"
+import { ProductHuntBadge } from "./ProductHuntBadge"
 
 const gradientText =
   "bg-linear-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent"
@@ -88,6 +89,11 @@ export function Hero() {
           </div>
         </div>
 
+        {/* Product Hunt Badge */}
+
+        <div className="mt-6 flex justify-center">
+          <ProductHuntBadge />
+        </div>
         {/* Demo with glow and floating chips */}
         <div className="relative mx-auto mt-16 max-w-5xl text-left">
           <div
