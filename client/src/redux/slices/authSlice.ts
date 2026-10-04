@@ -32,11 +32,12 @@ function errorMessage(e: unknown, fallback: string) {
   return fallback
 }
 
-export const loginWithGoogle = createAsyncThunk<User, string, { rejectValue: string }>(
+export const loginWithGoogle = createAsyncThunk<CurrentUserResponse, string, { rejectValue: string }>(
   "auth/loginWithGoogle",
   async (credential, { rejectWithValue }) => {
     try {
-      return await authService.verifyToken(credential)
+      await authService.verifyToken(credential)
+      return await authService.getMe()
     } catch (e) {
       return rejectWithValue(errorMessage(e, "Failed to verify token on backend."))
     }
@@ -95,7 +96,7 @@ export const deleteResume = createAsyncThunk<DeleteResumeResult, string, { rejec
 )
 
 // google login with gmail scope 
-export const connectGmail = createAsyncThunk<{ gmail_connected: boolean,gmail_bounce_check:boolean }, string, { rejectValue: string }>(
+export const connectGmail = createAsyncThunk<{ gmail_connected: boolean, gmail_bounce_check: boolean }, string, { rejectValue: string }>(
   "auth/connectGmail",
   async (code, { rejectWithValue }) => {
     try {
@@ -129,13 +130,15 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loginWithGoogle.pending, (state) => {
+     .addCase(loginWithGoogle.pending, (state) => {
         state.status = "loading"
         state.error = null
       })
       .addCase(loginWithGoogle.fulfilled, (state, action) => {
+        const { resumes, ...user } = action.payload
         state.status = "succeeded"
-        state.user = action.payload
+        state.user = user
+        state.resumes = resumes ?? []
         state.initialized = true
       })
       .addCase(loginWithGoogle.rejected, (state, action) => {
@@ -192,9 +195,9 @@ const authSlice = createSlice({
       // google login
       .addCase(connectGmail.fulfilled, (state, action) => {
         if (state.user) {
-            state.user.gmail_connected = action.payload.gmail_connected
-            state.user.gmail_bounce_check = action.payload.gmail_bounce_check
-          }
+          state.user.gmail_connected = action.payload.gmail_connected
+          state.user.gmail_bounce_check = action.payload.gmail_bounce_check
+        }
       })
   },
 })
