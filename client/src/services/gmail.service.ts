@@ -5,9 +5,19 @@ export interface TestEmailResult {
   queued: boolean
 }
 
+export interface GmailStatus {
+  gmail_connected: boolean
+  gmail_bounce_check: boolean
+}
+
 class GmailService {
-  async connect(code: string): Promise<{ gmail_connected: boolean, gmail_bounce_check: boolean }> {
-    const res = await instance.post<{ gmail_connected: boolean, gmail_bounce_check: boolean }>("/gmail/connect", { code })
+  async connect(code: string): Promise<GmailStatus> {
+    const res = await instance.post<GmailStatus>("/gmail/connect", { code })
+    return res.data
+  }
+
+  async disconnect(): Promise<GmailStatus> {
+    const res = await instance.post<GmailStatus>("/gmail/disconnect")
     return res.data
   }
 

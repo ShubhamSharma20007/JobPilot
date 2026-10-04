@@ -1,5 +1,5 @@
 import { useAppDispatch } from "../hook";
-import { connectGmail, deleteResume, fetchCurrentUser, updateProfile } from "../slices/authSlice";
+import { connectGmail, deleteResume, disconnectGmail, fetchCurrentUser, updateProfile } from "../slices/authSlice";
 
 export function dispatchAuth() {
     const dispatch = useAppDispatch();
@@ -9,7 +9,7 @@ export function dispatchAuth() {
        addFile:(file:File)=>dispatch(updateProfile({resume:file})).unwrap(),
        deleteFile:(id:string)=>dispatch(deleteResume(id)).unwrap(),
        connectGmail:(code:string)=>dispatch(connectGmail(code)).unwrap(),
+       disconnectGmail:()=>dispatch(disconnectGmail()).unwrap(),
        fetchCurrentUser:()=>dispatch(fetchCurrentUser()).unwrap()
-       
     }
 }

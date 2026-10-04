@@ -21,10 +21,12 @@ from utils.crypto import encrypt
 from utils.preferences import kick_sync
 from utils.request_user import get_user_id
 from utils.user_payload import GMAIL_READ_SCOPE, GMAIL_SEND_SCOPE
+from cryptography.fernet import InvalidToken
+from utils.crypto import decrypt, encrypt
 
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
-
+REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 
 def _exchange_code(code: str) -> dict:
     """Swap the one-time code from the browser pop-up for tokens."""
@@ -206,3 +208,49 @@ def send_test_email(req: Request, db: Session,background_tasks: BackgroundTasks,
     background_tasks.add_task(_deliver_test_email, user.id, subject, body)
 
     return {"sent_to": user.email, "queued": True}
+
+
+#  disconnect gmail
+
+
+def _revoke_at_google(row: OAuthToken) -> None:
+    """Ask Google to cancel JobPilot's access. Best effort: a failure here must not
+    stop us from deleting our own copy of the tokens."""
+    try:
+        enc = row.refresh_token_enc or row.access_token_enc
+        token = decrypt(enc)
+    except (InvalidToken, RuntimeError, ValueError):
+        print("Revoke skipped: stored token can't be read")
+        return
+    try:
+        res = requests.post(
+            REVOKE_URL,
+            data={"token": token},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=10,
+        )
+        # 400 invalid_token just means it was already revoked, which is fine
+        if res.status_code not in (200, 400):
+            print("Google revoke returned", res.status_code)
+    except requests.RequestException as e:
+        print("Google revoke failed:", e)
+ 
+ 
+def disconnect_gmail(req: Request, db: Session) -> dict:
+    user = db.get(User, get_user_id(req))
+    if not user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+ 
+    row = db.get(OAuthToken, user.id)
+    if row:
+        _revoke_at_google(row)
+        try:
+            db.delete(row)   # with no token row, the scheduler skips this user's sends
+            db.commit()
+        except SQLAlchemyError as e:
+            db.rollback()
+            print("DB error:", e)
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
+ 
+    return {"gmail_connected": False, "gmail_bounce_check": False}
+ 

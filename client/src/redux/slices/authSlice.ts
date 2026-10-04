@@ -107,6 +107,21 @@ export const connectGmail = createAsyncThunk<{ gmail_connected: boolean, gmail_b
   }
 )
 
+// disconnect gmail 
+
+export const disconnectGmail = createAsyncThunk<
+  { gmail_connected: boolean; gmail_bounce_check: boolean },
+  void,
+  { rejectValue: string }
+>("auth/disconnectGmail", async (_, { rejectWithValue }) => {
+  try {
+    return await gmailService.disconnect()
+  } catch (e) {
+    return rejectWithValue(errorMessage(e, "Couldn't disconnect Google."))
+  }
+})
+
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -130,7 +145,7 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-     .addCase(loginWithGoogle.pending, (state) => {
+      .addCase(loginWithGoogle.pending, (state) => {
         state.status = "loading"
         state.error = null
       })
@@ -199,6 +214,14 @@ const authSlice = createSlice({
           state.user.gmail_bounce_check = action.payload.gmail_bounce_check
         }
       })
+      // gmail disconnect
+      .addCase(disconnectGmail.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user.gmail_connected = action.payload.gmail_connected
+          state.user.gmail_bounce_check = action.payload.gmail_bounce_check
+        }
+      })
+
   },
 })
 
