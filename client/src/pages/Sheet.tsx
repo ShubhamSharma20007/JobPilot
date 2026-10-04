@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { RefreshCw } from "lucide-react"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { makeRows, newRow, SpreadsheetGrid } from "@/components/sheet/SpreadsheetGrid"
 import type { SheetRow } from "@/types/sheet.type"
 import { useAuth } from "@/redux/hooks/useAuth"
@@ -9,6 +9,7 @@ import { sheetService, type SheetResponse, type SheetRowOut } from "@/services/s
 import { toast } from "sonner"
 import { OptionMenu } from "@/components/ui/option-menu"
 import { Link } from "react-router-dom"
+import Loader from "@/components/Loader"
 
 const SYNC_OPTIONS = [
   { value: "5", label: "5 minutes" },
@@ -26,7 +27,9 @@ export default function Sheet() {
   const [rows, setRows] = useState<SheetRow[]>(() => makeRows(20))
   const [syncMinutes, setSyncMinutes] = useState("30")
   const { user, resumes } = useAuth()
-  const [loaded, setLoaded] = useState(false)
+  const [loaded, setLoaded] = useState(false) // true only after a successful load
+  const [loading, setLoading] = useState(true) // first load only: later syncs stay silent
+  const [loadFailed, setLoadFailed] = useState(false)
   const [statuses, setStatuses] = useState<Record<string, SheetRowOut>>({})
   const [paused, setPaused] = useState(false)
 
@@ -47,16 +50,29 @@ export default function Sheet() {
     }
   }
 
-  // 1. Load saved rows
-  useEffect(() => {
-    sheetService.list().then((res) => {
-      const saved = res.rows.map((r) => ({ ...newRow(), id: r.id, recruiter: r.email }))
-      setRows([...saved, ...makeRows(Math.max(5, 20 - saved.length))])
-      setSyncMinutes(SYNC_OPTIONS.some(o => o.value === String(res.syncMinutes)) ? String(res.syncMinutes) : "30")
-      applyServer(res)
-      setLoaded(true)
-    }).catch(() => toast.error("Couldn't load your sheet"))
+  // 1. Load saved rows (runs once, when the page mounts)
+  const load = useCallback(() => {
+    setLoading(true)
+    setLoadFailed(false)
+    sheetService
+      .list()
+      .then((res) => {
+        const saved = res.rows.map((r) => ({ ...newRow(), id: r.id, recruiter: r.email }))
+        setRows([...saved, ...makeRows(Math.max(5, 20 - saved.length))])
+        setSyncMinutes(SYNC_OPTIONS.some((o) => o.value === String(res.syncMinutes)) ? String(res.syncMinutes) : "30")
+        applyServer(res)
+        setLoaded(true)
+      })
+      .catch(() => {
+        setLoadFailed(true)
+        toast.error("Couldn't load your sheet")
+      })
+      .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
 
   // 2. Autosave one second after the user stops typing.
   //    `loaded` matters: saving the empty starting grid would delete the user's real rows.
@@ -84,6 +100,22 @@ export default function Sheet() {
       failed: s?.status === "failed" ? (s.lastError ?? "Failed") : ""
     }
   })
+
+  // Loader on the first load only. Autosave and the 30s refresh never set `loading`.
+  if (loading) return <Loader />
+
+  // If loading failed, show a retry instead of the empty grid, so autosave can't
+  // overwrite the user's real rows with a blank sheet.
+  if (loadFailed) {
+    return (
+      <div className="mx-auto grid min-h-[60vh] max-w-sm place-items-center px-4 text-center">
+        <div className="space-y-3">
+          <p className="font-medium">We couldn't load your sheet.</p>
+          <Button variant="outline" onClick={load}>Try again</Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="relative isolate overflow-hidden">
