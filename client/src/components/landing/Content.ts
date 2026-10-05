@@ -62,5 +62,5 @@ export const SOCIALS = {
 
 export const PRODUCT_HUNT = {
   url: "https://www.producthunt.com/products/crm-app-for-real-estate-companies?launch=jobpilot-3",
-  postId: "", // launch live hone ke baad yahan paste karo
+  postId: "1269562", 
 }
