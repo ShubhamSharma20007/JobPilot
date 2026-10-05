@@ -61,6 +61,6 @@ export const SOCIALS = {
 }
 
 export const PRODUCT_HUNT = {
-  url: "https://www.producthunt.com/products/crm-app-for-real-estate-companies?launch=jobpilot-3",
+  url: "https://www.producthunt.com/products/crm-app-for-real-estate-companies/reviews/new?utm_source=badge-product_review&utm_medium=badge&utm_source=badge-crm&#0045;app&#0045;for&#0045;real&#0045;estate&#0045;companies",
   postId: "1269562", 
 }
