@@ -1,7 +1,8 @@
-import { useEffect } from "react"
+import { Suspense, useEffect } from "react"
 import { Outlet, useLocation } from "react-router-dom"
 import { Navbar } from "@/components/landing/Navbar"
 import { Footer } from "@/components/landing/Sections"
+import Loader from "@/components/Loader"
 
 function ScrollToHash() {
   const { hash, pathname } = useLocation()
@@ -18,7 +19,9 @@ export function Layout() {
       <ScrollToHash />
       <Navbar />
       <main>
-        <Outlet />
+        <Suspense fallback={<Loader />}>
+          <Outlet />
+        </Suspense>
       </main>
       <Footer />
     </div>

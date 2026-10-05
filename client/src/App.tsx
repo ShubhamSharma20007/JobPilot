@@ -1,22 +1,33 @@
-import { useEffect } from "react"
+import { lazy, useEffect } from "react"
 import { Navigate, Route, Routes } from "react-router-dom"
 import { useAppDispatch } from "@/redux/hook"
 import { Layout } from "@/components/Layout"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import Landing from "@/pages/Landing"
-import Profile from "@/pages/Profile"
-import Settings from "@/pages/Settings"
-import Sheet from "./pages/Sheet"
 import { Toaster } from "./components/ui/sonner"
 import { dispatchAuth } from "./redux/hooks/dispatchAuth"
-import { Privacy, Terms } from "./pages/Legal"
+import { useAuth } from "./redux/hooks/useAuth"
+import { prefetchPages } from "./utils/page"
+
+
+const Profile = lazy(() => import("@/pages/Profile"))
+const Settings = lazy(() => import("@/pages/Settings"))
+const Sheet = lazy(() => import("@/pages/Sheet"))
+const Privacy = lazy(() => import("@/pages/Legal").then((m) => ({ default: m.Privacy })))
+const Terms = lazy(() => import("@/pages/Legal").then((m) => ({ default: m.Terms })))
+
 const App = () => {
   const dispatch = useAppDispatch()
   const { fetchCurrentUser } = dispatchAuth()
-
+  const { user } = useAuth()
   useEffect(() => {
     fetchCurrentUser()
   }, [dispatch])
+
+  useEffect(() => {
+    if (user) prefetchPages()
+  }, [user?.id])
+
 
   return (
     <>
@@ -24,8 +35,8 @@ const App = () => {
         closeButton
         toastOptions={{
           classNames: {
-            closeButton: '!right-0 !left-auto !translate-x-0'
-          }
+            closeButton: "!right-0 !left-auto !translate-x-0",
+          },
         }}
       />
       <Routes>
@@ -36,7 +47,6 @@ const App = () => {
             <Route path="settings" element={<Settings />} />
             <Route path="sheet" element={<Sheet />} />
           </Route>
-          <Route index element={<Landing />} />
           <Route path="privacy" element={<Privacy />} />
           <Route path="terms" element={<Terms />} />
           <Route path="*" element={<Navigate to="/" replace />} />

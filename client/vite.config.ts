@@ -8,4 +8,26 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(import.meta.dirname, "./src") },
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: "react-vendor",
+              test: /node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/,
+            },
+            {
+              name: "redux-vendor",
+              test: /node_modules[\\/](@reduxjs|react-redux|redux|immer|reselect)[\\/]/,
+            },
+            {
+              name: "ui-vendor",
+              test: /node_modules[\\/](@base-ui|lucide-react|sonner|class-variance-authority)[\\/]/,
+            },
+          ],
+        },
+      },
+    },
+  },
 })

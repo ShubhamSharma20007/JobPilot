@@ -23,7 +23,7 @@ from utils.request_user import get_user_id
 from utils.user_payload import GMAIL_READ_SCOPE, GMAIL_SEND_SCOPE
 from cryptography.fernet import InvalidToken
 from utils.crypto import decrypt, encrypt
-
+from utils.cache import invalidate_profile
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
 REVOKE_URL = "https://oauth2.googleapis.com/revoke"

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from models.file_model import File as FileModel
 from schemas.resume_schema import resume_out
 from utils.upload_file import deleteFile
-
+from utils.cache import invalidate_profile
 
 def _user_id(req: Request) -> uuid.UUID:
     try:

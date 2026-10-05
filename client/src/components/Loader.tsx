@@ -1,16 +1,24 @@
+import { useState } from "react"
+
+const DELAYS = [0, 75, 150, 225, 300, 375, 450, 525, 600]
+const PERIOD = 1350 
+
 const Loader = () => {
+
+  const [now] = useState(() => performance.now())
+
   return (
     <div role="status" aria-label="Loading" className="relative min-h-[calc(100vh-4rem)] w-full">
       <div className="loader">
-        <div className="square" id="sq1"></div>
-        <div className="square" id="sq2"></div>
-        <div className="square" id="sq3"></div>
-        <div className="square" id="sq4"></div>
-        <div className="square" id="sq5"></div>
-        <div className="square" id="sq6"></div>
-        <div className="square" id="sq7"></div>
-        <div className="square" id="sq8"></div>
-        <div className="square" id="sq9"></div>
+        {DELAYS.map((d, i) => (
+          <div
+            key={i}
+            id={`sq${i + 1}`}
+            className="square"
+           
+            style={{ animationDelay: `${((((d - now) % PERIOD) + PERIOD) % PERIOD) - PERIOD}ms` }}
+          />
+        ))}
       </div>
     </div>
   )
