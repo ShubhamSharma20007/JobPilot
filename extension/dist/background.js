@@ -34,6 +34,13 @@ async function addEmailToSheet(email) {
   return data;
 }
 
+
+//  Open sidebar
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch(console.error);
+
+
 // ─── message handler ────────────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "CHECK_AUTH") {
@@ -43,21 +50,23 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true; // keep port open for async response
   }
 
-   if (msg.type === "LOGIN_SUCCESS") {
-    const tabId = sender.tab?.id;
-    (async () => {
-      if (tabId) await chrome.tabs.remove(tabId).catch(() => {}); // close the login tab
-      try {
-        await chrome.action.openPopup(); // Chrome 127+
-      } catch (err) {
-        // Older Chrome or no focused window: show a badge instead
-        chrome.action.setBadgeText({ text: "✓" });
-        chrome.action.setBadgeBackgroundColor({ color: "#6366f1" });
-        setTimeout(() => chrome.action.setBadgeText({ text: "" }), 5000);
-      }
-    })();
-    sendResponse({ ok: true });
-  }
+  if (msg.type === "LOGIN_SUCCESS") {
+  const tabId = sender.tab?.id;
+  const windowId = sender.tab?.windowId;
+  (async () => {
+    if (tabId) await chrome.tabs.remove(tabId).catch(() => {});
+    try {
+      await chrome.sidePanel.open({ windowId }); // may need a user gesture
+    } catch {
+      chrome.action.setBadgeText({ text: "✓" });
+      chrome.action.setBadgeBackgroundColor({ color: "#6366f1" });
+      setTimeout(() => chrome.action.setBadgeText({ text: "" }), 5000);
+    }
+    // tell an already-open panel to re-check auth
+    chrome.runtime.sendMessage({ type: "AUTH_CHANGED" }).catch(() => {});
+  })();
+  sendResponse({ ok: true });
+}
 
   if (msg.type === "ADD_EMAIL") {
     addEmailToSheet(msg.email)
