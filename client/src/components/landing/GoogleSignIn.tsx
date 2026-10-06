@@ -1,7 +1,9 @@
 // GoogleSignIn.tsx
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google"
+import { useSearchParams } from "react-router-dom"
 import { loginWithGoogle } from "@/redux/slices/authSlice"
 import { useAppDispatch } from "@/redux/hook"
+import { notifyExtensionLoggedIn } from "@/utils/extension"
 
 const WIDTH = 180
 const HEIGHT = 40 // matches Google's "large" button
@@ -19,40 +21,37 @@ function GoogleG() {
 
 export function GoogleSignIn() {
   const dispatch = useAppDispatch()
+  const [searchParams] = useSearchParams()
+  const fromExtension = searchParams.get("from") === "extension"
 
   async function handleGoogleLogin(res: CredentialResponse) {
     if (!res.credential) return
     try {
       await dispatch(loginWithGoogle(res.credential)).unwrap()
+      if (fromExtension) notifyExtensionLoggedIn() // extension closes this tab and opens its popup
     } catch (error) {
       console.error("Token verification failed", error)
       alert("Failed to verify token on backend.")
     }
   }
 
+  return (
+    <div style={{ width: WIDTH, height: HEIGHT }} className="group relative shrink-0 overflow-hidden rounded-full">
+      <div className="pointer-events-none flex size-full items-center justify-center gap-2 rounded-full border bg-background text-sm font-medium text-foreground transition-colors group-hover:bg-muted">
+        <GoogleG />
+        Sign in with Google
+      </div>
 
-return (
-  <div
-    style={{ width: WIDTH, height: HEIGHT }}
-    className="group relative shrink-0 overflow-hidden rounded-full"
-  >
-    {/* Visible custom button */}
-    <div className="pointer-events-none flex size-full items-center justify-center gap-2 rounded-full border bg-background text-sm font-medium text-foreground transition-colors group-hover:bg-muted">
-      <GoogleG />
-      Sign in with Google
+      <div className="absolute inset-0 z-10 opacity-[0.01] [&_iframe]:!m-0 [&_iframe]:!block">
+        <GoogleLogin
+          onSuccess={handleGoogleLogin}
+          onError={() => alert("Login failed. Please try again.")}
+          size="large"
+          shape="pill"
+          text="signin_with"
+          width={WIDTH}
+        />
+      </div>
     </div>
-
-    {/* Google's real button: nearly invisible, not fully transparent */}
-    <div className="absolute inset-0 z-10 opacity-[0.01] [&_iframe]:!m-0 [&_iframe]:!block">
-      <GoogleLogin
-        onSuccess={handleGoogleLogin}
-        onError={() => alert("Login failed. Please try again.")}
-        size="large"
-        shape="pill"
-        text="signin_with"
-        width={WIDTH}
-      />
-    </div>
-  </div>
-)
+  )
 }

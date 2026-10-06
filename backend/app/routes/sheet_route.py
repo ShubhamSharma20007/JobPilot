@@ -4,15 +4,19 @@ from fastapi import APIRouter, Depends, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from controllers.sheet_controller import RowsBody, list_rows, save_rows, save_sync
+from controllers.sheet_controller import RowsBody, list_rows, save_rows, save_sync, add_single_email
 from database.db import get_db
 
 router = APIRouter()
 
 
 class SyncBody(BaseModel):
-    minutes: Literal[10, 30, 60, 1440] | None = None# in minutes
+    minutes: Literal[5, 10, 30, 60, 1440] | None = None  # in minutes
     timezone: str = Field("UTC", max_length=64)
+
+
+class AddEmailBody(BaseModel):
+    email: str = Field(max_length=500)
 
 
 @router.get("", status_code=status.HTTP_200_OK)
@@ -25,6 +29,12 @@ def write_rows(body: RowsBody, request: Request, db: Session = Depends(get_db)):
     return save_rows(request, db, body.rows)
 
 
+@router.post("/add", status_code=status.HTTP_200_OK)
+def add_email(body: AddEmailBody, request: Request, db: Session = Depends(get_db)):
+    """Extension endpoint: append a single email to the sheet (idempotent – ignores duplicates)."""
+    return add_single_email(request, db, body.email)
+
+
 @router.patch("/sync", status_code=status.HTTP_200_OK)
 def set_sync(body: SyncBody, request: Request, db: Session = Depends(get_db)):
-    return save_sync(request, db, body.minutes, body.timezone)
+    return save_sync(request, db, body.minutes, body.timezone)

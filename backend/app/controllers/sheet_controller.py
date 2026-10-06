@@ -109,3 +109,46 @@ def save_sync(req: Request, db: Session, minutes: int | None, tz: str) -> dict:
     row.timezone = tz
     db.commit()
     return {"syncMinutes": row.sync_minutes}
+
+
+def add_single_email(req: Request, db: Session, email: str) -> dict:
+    """Append one email to the user's sheet.
+
+    Returns ``{"added": True}`` on success, ``{"added": False, "reason": "duplicate"}``
+    when the address is already in the sheet, or raises HTTP 422 for invalid addresses.
+    """
+    user_id = get_user_id(req)
+    email = email.strip()
+
+    if not EMAIL_RE.match(email):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Invalid email address")
+
+    # Duplicate check (any status counts)
+    exists = (
+        db.query(RecruiterEmail)
+        .filter(
+            RecruiterEmail.user_id == user_id,
+            func.lower(RecruiterEmail.email) == email.lower(),
+        )
+        .first()
+    )
+    if exists:
+        return {"added": False, "reason": "duplicate"}
+
+    # Determine next position
+    max_pos = (
+        db.query(func.max(RecruiterEmail.position))
+        .filter(RecruiterEmail.user_id == user_id)
+        .scalar()
+    ) or 0
+
+    row = RecruiterEmail(
+        id=uuid.uuid4(),
+        user_id=user_id,
+        email=email,
+        position=max_pos + 1,
+        status="pending",
+    )
+    db.add(row)
+    db.commit()
+    return {"added": True, "row": _out(row)}

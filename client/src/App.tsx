@@ -8,7 +8,8 @@ import { Toaster } from "./components/ui/sonner"
 import { dispatchAuth } from "./redux/hooks/dispatchAuth"
 import { useAuth } from "./redux/hooks/useAuth"
 import { prefetchPages } from "./utils/page"
-
+import { useSearchParams } from "react-router-dom"
+import { notifyExtensionLoggedIn } from "./utils/extension"
 
 const Profile = lazy(() => import("@/pages/Profile"))
 const Settings = lazy(() => import("@/pages/Settings"))
@@ -20,6 +21,10 @@ const App = () => {
   const dispatch = useAppDispatch()
   const { fetchCurrentUser } = dispatchAuth()
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
+useEffect(() => {
+  if (user && searchParams.get("from") === "extension") notifyExtensionLoggedIn()
+}, [user?.id])
   useEffect(() => {
     fetchCurrentUser()
   }, [dispatch])

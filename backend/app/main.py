@@ -24,8 +24,11 @@ app.add_middleware(                                               # outer, added
     allow_origins=[
         config["CLIENT_URL"],
         'https://jobpilot-1bc0e.firebaseapp.com',
-        'https://jobpilot-1bc0e.web.app'
+        'https://jobpilot-1bc0e.web.app',
     ],
+    # Chrome extensions use a chrome-extension:// origin – allow all of them
+    # (or restrict to your specific extension ID once published).
+    allow_origin_regex=r"chrome-extension://.*",
     allow_credentials=True,
     allow_methods=["GET","POST","DELETE","PUT","PATCH"],
     allow_headers=["*"],

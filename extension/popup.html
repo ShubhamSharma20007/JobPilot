@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JobPilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Instrument+Sans:wght@400..600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Same tokens as the web app */
+    :root {
+      --background: #ffffff;
+      --foreground: #0a0a0a;
+      --card: #ffffff;
+      --primary: #171717;
+      --primary-foreground: #fafafa;
+      --muted: #f5f5f5;
+      --muted-foreground: #737373;
+      --border: #e5e5e5;
+      --ring: rgba(163, 163, 163, 0.5);
+      --destructive: #e7000b;
+      --indigo: #6366f1;
+      --violet: #8b5cf6;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --radius: 10px;
+      --font-heading: "Bricolage Grotesque", system-ui, sans-serif;
+      --font-sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #0a0a0a;
+        --foreground: #fafafa;
+        --card: #262626;
+        --primary: #e5e5e5;
+        --primary-foreground: #262626;
+        --muted: #404040;
+        --muted-foreground: #a3a3a3;
+        --border: rgba(255, 255, 255, 0.1);
+        --destructive: #ff6467;
+      }
+    }
+
+    body {
+      width: 340px;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      background: var(--background);
+      color: var(--foreground);
+    }
+    .hidden { display: none !important; }
+
+    /* ── Header (logo + wordmark, like the navbar) ── */
+    .header {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(99,102,241,.08), rgba(139,92,246,.04), transparent);
+    }
+    .logo-bg   { fill: var(--primary); }
+    .logo-fg   { fill: var(--primary-foreground); }
+    .logo-line { stroke: var(--primary); }
+    .logo-dots { stroke: var(--primary-foreground); }
+    .header-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .header-sub { font-size: 12px; color: var(--muted-foreground); }
+    .version {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px dashed rgba(99,102,241,.4);
+      background: rgba(99,102,241,.05);
+      color: var(--indigo);
+    }
+
+    .section { padding: 16px; }
+
+    /* ── Cards ── */
+    .user-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: linear-gradient(90deg, rgba(99,102,241,.08), rgba(139,92,246,.04), transparent), var(--card);
+      box-shadow: 0 6px 16px rgba(99,102,241,.06);
+    }
+    .avatar, .avatar-fallback {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .avatar { object-fit: cover; border: 1px solid var(--border); }
+    .avatar-fallback {
+      display: flex; align-items: center; justify-content: center;
+      background: var(--muted);
+      color: var(--muted-foreground);
+      font-size: 13px;
+    }
+    .user-info { min-width: 0; flex: 1; }
+    .user-name {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 14px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .user-email {
+      font-size: 12px; color: var(--muted-foreground);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .connected-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      flex-shrink: 0;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(16,185,129,.3);
+      background: rgba(16,185,129,.1);
+      color: #059669;
+      font-size: 11px; font-weight: 500;
+    }
+    @media (prefers-color-scheme: dark) { .connected-badge { color: #34d399; } }
+    .connected-badge::before {
+      content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--emerald);
+    }
+
+    /* ── Tip: dashed banner like the sheet page notices ── */
+    .tip {
+      display: flex; gap: 10px;
+      padding: 12px;
+      border: 1px dashed rgba(99,102,241,.3);
+      border-radius: 16px;
+      background: linear-gradient(90deg, rgba(99,102,241,.07), transparent);
+      font-size: 13px;
+      color: var(--muted-foreground);
+    }
+    .tip svg { flex-shrink: 0; margin-top: 2px; color: var(--indigo); }
+    .tip-title { font-weight: 500; color: var(--foreground); }
+
+    /* ── Section label with gradient bar (Profile page SectionHeading) ── */
+    .label {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 8px;
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .label::before {
+      content: ""; width: 4px; height: 16px; border-radius: 999px;
+      background: linear-gradient(180deg, var(--indigo), var(--violet));
+    }
+
+    /* ── Input ── */
+    .input-row { display: flex; gap: 8px; }
+    .input-row input {
+      flex: 1; min-width: 0;
+      height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: inherit; font-size: 14px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .input-row input::placeholder { color: var(--muted-foreground); }
+    .input-row input:focus {
+      border-color: #a3a3a3;
+      box-shadow: 0 0 0 3px var(--ring);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 40px; padding: 0 14px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      font-family: inherit; font-size: 14px; font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: opacity .15s, background .15s, transform .1s;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-full { width: 100%; }
+
+    .btn-primary {
+      color: #fff;
+      background: linear-gradient(90deg, var(--indigo), var(--violet));
+      box-shadow: 0 1px 2px rgba(99,102,241,.25);
+    }
+    .btn-primary:hover:not(:disabled) { opacity: .9; }
+
+    .btn-secondary {
+      color: var(--foreground);
+      background: var(--background);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) { background: var(--muted); }
+    .btn-secondary svg { color: var(--indigo); }
+
+    /* Same pill as the client's custom Google button */
+    .btn-google {
+      width: 100%;
+      border-radius: 999px;
+      color: var(--foreground);
+      background: var(--background);
+      border-color: var(--border);
+    }
+    .btn-google:hover { background: var(--muted); }
+
+    /* ── Status ── */
+    .status-msg { min-height: 18px; margin-top: 8px; font-size: 12px; }
+    .status-success { color: #059669; }
+    .status-error   { color: var(--destructive); }
+    .status-warn    { color: #b45309; }
+    @media (prefers-color-scheme: dark) {
+      .status-success { color: #34d399; }
+      .status-warn    { color: #fbbf24; }
+    }
+
+    /* ── Footer (muted bar like settings footers) ── */
+    .footer {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: rgba(128,128,128,.06);
+    }
+    .footer a, .footer button.link {
+      all: unset;
+      font-size: 12px;
+      color: var(--muted-foreground);
+      cursor: pointer;
+      transition: color .15s;
+    }
+    .footer a:hover, .footer button.link:hover { color: var(--foreground); }
+    .footer .spacer { flex: 1; }
+    .link-divider { color: var(--border); }
+
+    /* ── Skeleton ── */
+    .skeleton-line {
+      height: 12px; border-radius: 999px;
+      background: rgba(128,128,128,.25);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 50% { opacity: .5; } }
+    @media (prefers-reduced-motion: reduce) { .skeleton-line { animation: none; } }
+  </style>
+</head>
+<body>
+
+  <!-- header -->
+  <div class="header">
+    <svg viewBox="0 0 64 64" width="32" height="32" aria-hidden="true">
+      <rect class="logo-bg" width="64" height="64" rx="16"/>
+      <path class="logo-dots" d="M11 50 C15 44 19 42 24 40" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="1 5" opacity="0.7"/>
+      <path class="logo-fg" d="M49 15 L14 29 L27 36 L34 50 Z" stroke-linejoin="round"/>
+      <path class="logo-line" d="M27 36 L49 15" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <div class="header-title">JobPilot</div>
+      <div class="header-sub">Add recruiter emails to your sheet</div>
+    </div>
+    <span class="version">v1.0</span>
+  </div>
+
+  <!-- loading -->
+  <div id="view-loading" class="section">
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="skeleton-line" style="width:70%"></div>
+      <div class="skeleton-line" style="width:50%"></div>
+    </div>
+  </div>
+
+  <!-- logged out -->
+  <div id="view-loggedout" class="hidden">
+    <div class="section">
+      <p style="font-size:13px;color:var(--muted-foreground);margin-bottom:12px;">
+        Sign in to JobPilot to start saving recruiter emails directly from any page.
+      </p>
+      <button class="btn btn-google" id="btn-login">
+        <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Sign in with Google
+      </button>
+    </div>
+  </div>
+
+  <!-- logged in -->
+  <div id="view-loggedin" class="hidden">
+    <div class="section" style="padding-bottom:0">
+      <div class="user-card">
+        <img id="user-avatar" class="avatar hidden" alt="Avatar" referrerpolicy="no-referrer" />
+        <div id="user-fallback" class="avatar-fallback hidden"></div>
+        <div class="user-info">
+          <div class="user-name" id="user-name"></div>
+          <div class="user-email" id="user-email"></div>
+        </div>
+        <span class="connected-badge">Active</span>
+      </div>
+    </div>
+
+    <div class="section" style="padding-bottom:0">
+      <div class="tip">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" aria-hidden="true">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        </svg>
+        <div>
+          <div class="tip-title">Select any email on any page</div>
+          <div>A JobPilot card appears so you can add it to your sheet instantly.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" style="padding-bottom:0">
+      <div class="label">Or add manually</div>
+      <div class="input-row">
+        <input type="email" id="manual-email" placeholder="recruiter@company.com" autocomplete="off" spellcheck="false" />
+        <button class="btn btn-primary" id="btn-add">Add</button>
+      </div>
+      <div class="status-msg" id="add-status"></div>
+    </div>
+
+    <div class="section" style="padding-top:0">
+      <button class="btn btn-secondary btn-full" id="btn-sheet">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" aria-hidden="true">
+          <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 8a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zm0 8a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+        </svg>
+        Open your sheet
+      </button>
+    </div>
+  </div>
+
+  <!-- footer -->
+  <div class="footer">
+    <a id="footer-jobpilot" href="#" title="Open JobPilot">JobPilot.app</a>
+    <span class="spacer"></span>
+    <a href="https://jobpilot-1bc0e.firebaseapp.com/privacy" id="footer-privacy" style="display:none;" target="_blank" rel="noopener noreferrer">Privacy</a>
+    <span class="link-divider">·</span>
+    <button class="link" id="btn-logout" style="display:none;">Sign out</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

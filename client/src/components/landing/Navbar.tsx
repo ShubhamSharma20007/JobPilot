@@ -4,7 +4,6 @@ import { UserMenu } from "./UserMenu"
 import { APP } from "./Content"
 import { Link } from "react-router-dom"
 import { useAuth } from "@/redux/hooks/useAuth"
-
 const LINKS = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#pipeline", label: "Flow" },
@@ -15,6 +14,7 @@ const LINKS = [
 
 export function Navbar() {
   const { user, initialized } = useAuth()
+  
 
 
 
