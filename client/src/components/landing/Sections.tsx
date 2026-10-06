@@ -9,7 +9,7 @@ import { GoogleSignIn } from "./GoogleSignIn"
 import { SocialLinks } from "./SocialLinks"
 import { Reveal } from "./Reveal"
 import { useState } from "react"
-import { ProductHuntBadge } from "./ProductHuntBadge"
+import { ExtensionLink, ProductHuntBadge } from "./ProductHuntBadge"
 
 const gradientText =
   "bg-linear-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent"
@@ -18,6 +18,7 @@ const FOOTER_PRODUCT = [
   { hash: "#how-it-works", label: "How it works" },
   { hash: "#pipeline", label: "Flow" },
   { hash: "#features", label: "Features" },
+  { hash: "#extension", label: "Chrome extension" },
   { hash: "#faq", label: "FAQ" },
 ]
 
@@ -89,10 +90,10 @@ export function Hero() {
           </div>
         </div>
 
-        {/* Product Hunt Badge */}
+        {/* Hero: extension link only */}
 
         <div className="mt-6 flex justify-center">
-          <ProductHuntBadge />
+          <ExtensionLink />
         </div>
         {/* Demo with glow and floating chips */}
         <div className="relative mx-auto mt-16 max-w-5xl text-left">
@@ -348,21 +349,26 @@ export function FinalCta() {
           <p className="mx-auto mt-4 max-w-md opacity-80">
             Set it up once, add your list, and let JobPilot send at a pace that keeps your Gmail safe.
           </p>
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             {user ? (
               <Link to="/sheet" className={buttonVariants({ variant: "secondary", size: "lg", className: "h-11 px-6 text-base" })}>
                 Open your sheet
               </Link>
             ) : (
-              <Button
-                variant="secondary"
-                size="lg"
-                className="h-11 px-6 text-base"
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              >
+              <Button variant="secondary" size="lg" className="h-11 px-6 text-base" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                 Sign in with Google to start
               </Button>
             )}
+            <a
+              href="#extension"
+              className={buttonVariants({
+                variant: "ghost",
+                size: "lg",
+                className: "h-11 px-5 text-base text-primary-foreground hover:bg-white/10 hover:text-primary-foreground",
+              })}
+            >
+              Get the extension
+            </a>
           </div>
         </div>
       </Reveal>
@@ -388,6 +394,7 @@ export function Footer() {
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               Write your application email once. JobPilot sends the rest from your own Gmail, at a pace that keeps it safe.
             </p>
+            <ProductHuntBadge className="mt-5" />
           </div>
 
           {/* Product */}

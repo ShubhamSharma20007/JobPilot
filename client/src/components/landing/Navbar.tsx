@@ -8,8 +8,8 @@ const LINKS = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#pipeline", label: "Flow" },
   { href: "#features", label: "Features" },
-  { href: "#coming-soon", label: "Coming soon" },
   { href: "#faq", label: "FAQ" },
+  { href: "#extension", label: "Extension" },
 ]
 
 export function Navbar() {

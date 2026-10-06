@@ -174,6 +174,14 @@ export default function Sheet() {
             <ConnectGmail />
           </div>
         )}
+        {view.every((r) => !r.recruiter.trim()) && (
+  <div className={banner}>
+    <p className="text-sm">Finding emails while you browse? The Chrome extension adds them to this sheet in one click.</p>
+    <Link to={{ pathname: "/", hash: "#extension" }} className={buttonVariants({ variant: "outline" })}>
+      Get the extension
+    </Link>
+  </div>
+)}
         <div className="mt-6">
           <SpreadsheetGrid rows={view} onChange={setRows} />
         </div>

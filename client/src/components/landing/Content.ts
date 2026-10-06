@@ -61,9 +61,13 @@ export const SOCIALS = {
 }
 
 export const PRODUCT_HUNT = {
-  url: "https://www.producthunt.com/products/jobpilot-3?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-jobpilot-4",
-  postId: "1270220", 
+  url: "https://www.producthunt.com/products/jobpilot-3?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-jobpilot-4",
+  postId: "1270220",
 }
 
+export const EXTENSION = {
+  storeUrl: "", // paste the Chrome Web Store URL here once it's published
+  zipUrl: "/jobpilot-extension.zip", // put the zip in client/public/
+}
 
 

@@ -17,6 +17,9 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: false,          // don't wipe dist on every rebuild
     reportCompressedSize: false, // skips the "computing gzip size" step
+    watch: {
+      exclude: ["dist/**", "node_modules/**"],
+    },
     rollupOptions: {
       input: {
         popup: path.resolve(__dirname, "popup.html"),
