@@ -386,7 +386,10 @@ def recover_interrupted() -> None:
 
 def start_scheduler() -> None:
     recover_interrupted()
-    scheduler.add_job(tick, "interval", seconds=60, id="tick", max_instances=1, coalesce=True)
-    scheduler.add_job(send_summaries, "interval", minutes=5, id="summaries", max_instances=1, coalesce=True)
-    scheduler.add_job(check_bounces, "interval", minutes=10, id="bounces", max_instances=1, coalesce=True)
+    # scheduler.add_job(tick, "interval", seconds=60, id="tick", max_instances=1, coalesce=True)
+    # scheduler.add_job(send_summaries, "interval", minutes=5, id="summaries", max_instances=1, coalesce=True)
+    # scheduler.add_job(check_bounces, "interval", minutes=10, id="bounces", max_instances=1, coalesce=True)
+    scheduler.add_job(tick, "interval", minutes=2, id="tick", max_instances=1, coalesce=True)
+    scheduler.add_job(send_summaries, "interval", minutes=30, id="summaries", max_instances=1, coalesce=True)
+    scheduler.add_job(check_bounces, "interval", minutes=30, id="bounces", max_instances=1, coalesce=True)
     scheduler.start()

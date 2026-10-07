@@ -394,7 +394,7 @@ export function Footer() {
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               Write your application email once. JobPilot sends the rest from your own Gmail, at a pace that keeps it safe.
             </p>
-            <ProductHuntBadge className="mt-5" />
+            {/* <ProductHuntBadge className="mt-5" /> */}
           </div>
 
           {/* Product */}

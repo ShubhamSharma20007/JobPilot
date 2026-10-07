@@ -34,7 +34,7 @@ export function GoogleSignIn() {
       if (fromExtension) notifyExtensionLoggedIn() // extension closes this tab and opens its popup
     } catch (error) {
       console.error("Token verification failed", error)
-      alert("Failed to verify token on backend.")
+      toast.error("Failed to verify token on backend.")
        toast.error("Failed to verify Google login.", {
       id: toastId,
     })
@@ -51,7 +51,7 @@ export function GoogleSignIn() {
       <div className="absolute inset-0 z-10 opacity-[0.01] [&_iframe]:!m-0 [&_iframe]:!block">
         <GoogleLogin
           onSuccess={handleGoogleLogin}
-          onError={() => alert("Login failed. Please try again.")}
+          onError={() => toast.error("Login failed. Please try again.")}
           size="large"
           shape="pill"
           text="signin_with"
