@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom"
 import { loginWithGoogle } from "@/redux/slices/authSlice"
 import { useAppDispatch } from "@/redux/hook"
 import { notifyExtensionLoggedIn } from "@/utils/extension"
-
+import { toast } from "sonner"
 const WIDTH = 180
 const HEIGHT = 40 // matches Google's "large" button
 
@@ -23,15 +23,21 @@ export function GoogleSignIn() {
   const dispatch = useAppDispatch()
   const [searchParams] = useSearchParams()
   const fromExtension = searchParams.get("from") === "extension"
-
   async function handleGoogleLogin(res: CredentialResponse) {
+    const toastId = toast.loading("Signing in with Google...")
     if (!res.credential) return
     try {
       await dispatch(loginWithGoogle(res.credential)).unwrap()
+      toast.success("Successfully signed in!",{
+        id:toastId
+      })
       if (fromExtension) notifyExtensionLoggedIn() // extension closes this tab and opens its popup
     } catch (error) {
       console.error("Token verification failed", error)
       alert("Failed to verify token on backend.")
+       toast.error("Failed to verify Google login.", {
+      id: toastId,
+    })
     }
   }
 
