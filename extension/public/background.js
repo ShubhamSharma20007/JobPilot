@@ -1,7 +1,9 @@
 /* background.js – service worker for JobPilot extension */
 
-const API_BASE='https://jobpilot-ivt1.onrender.com'
-const JOBPILOT_URL='https://jobpilot-1bc0e.firebaseapp.com'
+// const API_BASE='https://jobpilot-ivt1.onrender.com'
+// const JOBPILOT_URL='https://jobpilot-1bc0e.firebaseapp.com'
+const API_BASE='http://localhost:8001'
+const JOBPILOT_URL='http://localhost:5173'
 console.log(API_BASE, JOBPILOT_URL);
 
 // ─── fetch current user from backend session ───────────────────────────────
