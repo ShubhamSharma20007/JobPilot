@@ -1,11 +1,11 @@
 import re  # for email validation (Regex)
 import uuid 
 
-from fastapi import HTTPException, Request, status,Session
+from fastapi import HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import func
 from zoneinfo import ZoneInfo
-
+from sqlalchemy.orm import Session
 from models.recruiter_email_model import RecruiterEmail
 from models.user_perference import UserPreference
 from utils.request_user import get_user_id
