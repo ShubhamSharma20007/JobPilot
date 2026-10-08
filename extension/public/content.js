@@ -61,8 +61,8 @@ function buildTooltip(email, viewportRect) {
   el.id = "jp-tooltip";
   el.setAttribute("data-jp", "true");
 
+  // <div class="jp-accent" aria-hidden="true"></div>
   el.innerHTML = `
-    <div class="jp-accent" aria-hidden="true"></div>
     <div class="jp-pill">
       <span class="jp-logo-wrap" aria-hidden="true">${LOGO}</span>
 

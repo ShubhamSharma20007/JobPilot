@@ -1,7 +1,6 @@
 /* ============================================================
    JobPilot Extension – selection tooltip
-   Mirrors the client design system (neutral tokens, indigo→violet
-   gradient, rounded-2xl card, pill chips, Instrument Sans).
+   Styled like the shadcn Card + Button used in the client app.
    position:fixed so it works inside iframes (Gmail etc.)
    ============================================================ */
 @import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..600&display=swap");
@@ -27,18 +26,19 @@
   z-index: 2147483647 !important;
   display: flex !important;
   flex-direction: column !important;
-  width: 380px !important;
+  width: 250px !important;
   box-sizing: border-box !important;
 
   font-family: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif !important;
-  font-size: 13px !important;
+  font-size: 14px !important;
   line-height: 1.4 !important;
   color: var(--jp-fg) !important;
 
+  /* shadcn Card: bg-card, rounded-xl, border, shadow-sm */
   background: var(--jp-bg) !important;
   border: 1px solid var(--jp-border) !important;
-  border-radius: 16px !important;
-  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
   overflow: hidden !important;
   pointer-events: all !important;
 
@@ -51,15 +51,10 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Thin gradient accent along the top edge (like the sheet grid) */
-#jp-tooltip .jp-accent {
-  all: initial !important;
-  display: block !important;
-  height: 2px !important;
-  background: linear-gradient(90deg, var(--jp-indigo), var(--jp-violet)) !important;
-}
+/* Gradient top strip removed. Rule intentionally deleted:
+   an empty .jp-accent div collapses to zero height. */
 
-/* ── Main row ── */
+/* ── Main row (CardContent) ── */
 #jp-tooltip .jp-pill {
   all: initial !important;
   display: flex !important;
@@ -70,7 +65,7 @@
   font-family: inherit !important;
 }
 
-/* ── Logo (same mark as the navbar) ── */
+/* ── Logo ── */
 #jp-tooltip .jp-logo-wrap {
   all: initial !important;
   display: flex !important;
@@ -82,7 +77,7 @@
 #jp-tooltip .jp-logo-line { stroke: var(--jp-primary) !important; }
 #jp-tooltip .jp-logo-dots { stroke: var(--jp-primary-fg) !important; }
 
-/* ── Email chip: indigo pill, mono text ── */
+/* ── Email chip ── */
 #jp-tooltip .jp-email-chip {
   all: initial !important;
   display: flex !important;
@@ -112,7 +107,7 @@
   color: var(--jp-indigo) !important;
 }
 
-/* ── Gradient action button (same as client gradientBtn) ── */
+/* ── shadcn Button (default size: h-8, rounded-lg, text-sm, font-medium) ── */
 #jp-tooltip .jp-btn-add,
 #jp-tooltip .jp-btn-login {
   all: initial !important;
@@ -122,16 +117,26 @@
   gap: 6px !important;
   flex-shrink: 0 !important;
   height: 32px !important;
-  padding: 0 12px !important;
+  padding: 0 10px !important;
   box-sizing: border-box !important;
+  border: 1px solid transparent !important;
   border-radius: 10px !important;
   cursor: pointer !important;
   white-space: nowrap !important;
+  user-select: none !important;
   font-family: inherit !important;
-  font-size: 13px !important;
+  font-size: 14px !important;
   font-weight: 500 !important;
-  transition: opacity 0.15s, transform 0.1s !important;
+  line-height: 1 !important;
+  transition: opacity 0.15s, background 0.15s, transform 0.1s !important;
 }
+#jp-tooltip .jp-btn-add:focus-visible,
+#jp-tooltip .jp-btn-login:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35) !important;
+}
+
+/* Add button keeps the indigo→violet gradient from the client */
 #jp-tooltip .jp-btn-add {
   color: #fff !important;
   background: linear-gradient(90deg, var(--jp-indigo), var(--jp-violet)) !important;
@@ -145,14 +150,14 @@
   box-shadow: none !important;
 }
 
-/* Google sign-in: outline pill like the client's GoogleSignIn */
+/* Sign in: shadcn "outline" variant */
 #jp-tooltip .jp-btn-login {
   color: var(--jp-fg) !important;
   background: var(--jp-bg) !important;
   border: 1px solid var(--jp-border) !important;
-  border-radius: 999px !important;
 }
 #jp-tooltip .jp-btn-login:hover { background: var(--jp-muted) !important; }
+#jp-tooltip .jp-btn-login:active { transform: translateY(1px) !important; }
 
 /* ── Spinner ── */
 #jp-tooltip .jp-spinner {
@@ -167,7 +172,7 @@
 }
 @keyframes jp-spin { to { transform: rotate(360deg); } }
 
-/* ── Status bar ── */
+/* ── Status bar (only visible after an action) ── */
 #jp-tooltip .jp-status-bar {
   all: initial !important;
   display: none !important;
@@ -228,7 +233,7 @@
     --jp-primary: #e5e5e5;
     --jp-primary-fg: #262626;
     --jp-destructive: #ff6467;
-    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2), 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4) !important;
   }
   #jp-tooltip .jp-email-chip { background: rgba(99, 102, 241, 0.18) !important; }
   #jp-tooltip .jp-email-chip,

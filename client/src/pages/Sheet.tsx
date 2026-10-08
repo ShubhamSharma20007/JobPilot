@@ -86,11 +86,36 @@ export default function Sheet() {
   }, [rows, loaded])
 
   // 3. Refresh delivered/failed columns
-  useEffect(() => {
-    if (!loaded) return
-    const t = setInterval(() => sheetService.list().then(applyServer).catch(() => { }), 30_000)
-    return () => clearInterval(t)
-  }, [loaded])
+  // useEffect(() => {
+  //   if (!loaded) return
+  //   const t = setInterval(() => sheetService.list().then(applyServer).catch(() => { }), 30_000)
+  //   return () => clearInterval(t)
+  // }, [loaded])
+const hasActive = Object.values(statuses).some(
+  (s) => s.status === "pending" || s.status === "sending"
+)
+
+useEffect(() => {
+  if (!loaded) return
+
+  const refresh = () => {
+    if (document.visibilityState === "visible") {
+      sheetService.list().then(applyServer).catch(() => {})
+    }
+  }
+
+  // one catch-up refresh whenever you come back to the tab
+  document.addEventListener("visibilitychange", refresh)
+
+  // keep polling only while something is still being sent
+  const t = hasActive ? setInterval(refresh, 30_000) : undefined
+
+  return () => {
+    document.removeEventListener("visibilitychange", refresh)
+    if (t) clearInterval(t)
+  }
+}, [loaded, hasActive])
+
 
   // 4. What the grid shows
   const view = rows.map((r) => {
