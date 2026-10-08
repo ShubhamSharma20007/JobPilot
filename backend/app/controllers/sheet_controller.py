@@ -1,7 +1,7 @@
 import re  # for email validation (Regex)
 import uuid 
 
-from fastapi import HTTPException, Request, status
+from fastapi import HTTPException, Request, status,Session
 from pydantic import BaseModel, Field
 from sqlalchemy import func
 from zoneinfo import ZoneInfo
@@ -151,4 +151,4 @@ def add_single_email(req: Request, db: Session, email: str) -> dict:
     )
     db.add(row)
     db.commit()
-    return {"added": True, "row": _out(row)}
+    return {"added": True, "row": _out(row)}
