@@ -44,18 +44,58 @@ export function Privacy() {
       <p>With your permission, JobPilot sends job application emails from your Gmail account (gmail.send) and checks for delivery failure notices (gmail.readonly). We only read bounce notices from mailer-daemon or postmaster. We do not read, store or share any other email in your inbox.</p>
 
       <H2>How we use and store data</H2>
-      <p>Data is used only to provide the service. Google access tokens are stored encrypted. We do not sell your data or use it for advertising or AI model training.</p>
+      <p>Data is used only to provide the service. We do not sell your data or use it for advertising or AI model training.</p>
+
+      <H2>How we protect your data</H2>
+      <p>We take the following steps to protect your data, including sensitive Google user data such as your Google access tokens:</p>
+      <ul className="list-disc space-y-2 pl-6">
+        <li>
+          <span className="font-medium text-foreground">Encryption in transit.</span> All communication between your browser, our servers and Google's APIs uses HTTPS (TLS).
+        </li>
+        <li>
+          <span className="font-medium text-foreground">Encryption of tokens.</span> Google OAuth tokens are encrypted before they are stored and are never exposed to your browser or to the Chrome extension.
+        </li>
+        <li>
+          <span className="font-medium text-foreground">Secure sessions.</span> You stay signed in through a secure, server-managed session cookie.
+        </li>
+        <li>
+          <span className="font-medium text-foreground">Access control.</span> Your data is only available to your own account. Access to our servers and databases is restricted to the developer and protected by authentication and credentials kept outside the source code.
+        </li>
+        <li>
+          <span className="font-medium text-foreground">Least privilege.</span> We request only the Gmail permissions needed to send your applications and detect delivery failures.
+        </li>
+        <li>
+          <span className="font-medium text-foreground">No human access.</span> No one at JobPilot reads your Gmail data, except where you ask us for support, where it is needed to investigate abuse or a security issue, or where the law requires it.
+        </li>
+        <li>
+          <span className="font-medium text-foreground">No sharing.</span> We do not share Google user data with third parties, other than the infrastructure providers that host the service and only as needed to run it.
+        </li>
+      </ul>
+
+      <H2>Data retention</H2>
+      <p>We keep your data only while your account is active. When you disconnect Google, your stored Google tokens are deleted and sending stops. When you ask us to delete your account, we delete your account, resumes, template, sheet data and stored Google tokens within 30 days.</p>
 
       <H2>Google API Services User Data Policy</H2>
-      <p>JobPilot's use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.</p>
+      <p>
+        JobPilot's use and transfer of information received from Google APIs adheres to the{" "}
+        <a
+          href="https://developers.google.com/terms/api-services-user-data-policy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={mailLink}
+        >
+          Google API Services User Data Policy
+        </a>
+        , including the Limited Use requirements.
+      </p>
 
       <H2>Deleting your data</H2>
       <p>
-        You can revoke access at{" "}
+        You can disconnect Google at any time from Settings in JobPilot, or revoke access at{" "}
         <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className={mailLink}>
           https://myaccount.google.com/permissions
-        </a>{" "}
-        at any time. To delete your account and data, email{" "}
+        </a>
+        . To delete your account and data, email{" "}
         <a href="mailto:shubhamsharma20007@gmail.com" className={mailLink}>shubhamsharma20007@gmail.com</a>.
       </p>
 
