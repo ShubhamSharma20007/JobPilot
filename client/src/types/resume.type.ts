@@ -1,11 +1,10 @@
-
-export const MAX_RESUMES = 5
-export const MAX_RESUME_MB = 5
+export const MAX_RESUMES = 5;
+export const MAX_RESUME_MB = 5;
 export interface Resume {
-  id: string
-  name: string
-  size: number // bytes
-  uploadedAt: string // ISO date
-  isDefault: boolean
-  url: string // object URL for preview (swap for your backend URL later)
+  id: string;
+  name: string;
+  size: number; // bytes
+  uploadedAt: string; // ISO date
+  isDefault: boolean;
+  url: string; // object URL for preview (swap for your backend URL later)
 }

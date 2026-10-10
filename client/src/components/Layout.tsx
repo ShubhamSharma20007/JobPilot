@@ -1,16 +1,17 @@
-import { Suspense, useEffect } from "react"
-import { Outlet, useLocation } from "react-router-dom"
-import { Navbar } from "@/components/landing/Navbar"
-import { Footer } from "@/components/landing/Sections"
-import Loader from "@/components/Loader"
+import { Suspense, useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import { Navbar } from '@/components/landing/Navbar';
+import { Footer } from '@/components/landing/Sections';
+import Loader from '@/components/Loader';
 
 function ScrollToHash() {
-  const { hash, pathname } = useLocation()
+  const { hash, pathname } = useLocation();
   useEffect(() => {
-    if (hash) document.querySelector(hash)?.scrollIntoView({ behavior: "smooth" })
-    else window.scrollTo({ top: 0 })
-  }, [hash, pathname])
-  return null
+    if (hash)
+      document.querySelector(hash)?.scrollIntoView({ behavior: 'smooth' });
+    else window.scrollTo({ top: 0 });
+  }, [hash, pathname]);
+  return null;
 }
 
 export function Layout() {
@@ -25,5 +26,5 @@ export function Layout() {
       </main>
       <Footer />
     </div>
-  )
+  );
 }

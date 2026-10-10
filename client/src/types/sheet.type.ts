@@ -1,7 +1,7 @@
 export interface SheetRow {
-  id: string
-  recruiter: string 
-  delivered: string 
-  failed: string 
-  url: string
+  id: string;
+  recruiter: string;
+  delivered: string;
+  failed: string;
+  url: string;
 }

@@ -1,46 +1,46 @@
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 export function Reveal({
   children,
   delay = 0,
-  className = "",
+  className = '',
 }: {
-  children: ReactNode
-  delay?: number
-  className?: string
+  children: ReactNode;
+  delay?: number;
+  className?: string;
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [shown, setShown] = useState(false)
+  const ref = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
 
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setShown(true)
-      return
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setShown(true);
+      return;
     }
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setShown(true)
-          io.disconnect()
+          setShown(true);
+          io.disconnect();
         }
       },
       { threshold: 0.15 }
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [])
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   return (
     <div
       ref={ref}
       style={{ transitionDelay: `${delay}ms` }}
       className={`transition-all duration-700 ease-out motion-reduce:transition-none ${
-        shown ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+        shown ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
       } ${className}`}
     >
       {children}
     </div>
-  )
+  );
 }

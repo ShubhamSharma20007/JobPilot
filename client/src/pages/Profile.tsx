@@ -1,107 +1,124 @@
-import { useEffect, useState } from "react"
-import { toast } from "sonner"
-import { useAuth } from "@/redux/hooks/useAuth"
-import { dispatchAuth } from "@/redux/hooks/dispatchAuth"
-import { useAppDispatch } from "@/redux/hook"
-import { markDefaultResume } from "@/redux/slices/authSlice"
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { useAuth } from '@/redux/hooks/useAuth';
+import { dispatchAuth } from '@/redux/hooks/dispatchAuth';
+import { useAppDispatch } from '@/redux/hook';
+import { markDefaultResume } from '@/redux/slices/authSlice';
 
-import { ProfileDetails } from "@/components/profile/ProfileDetails"
-import { ResumeDropzone } from "@/components/profile/ResumeDropzone"
-import { CurrentResume, ResumeList } from "@/components/profile/ResumeList"
-import { MAX_RESUMES } from "@/types/resume.type"
-import { useLocation } from "react-router-dom"
+import { ProfileDetails } from '@/components/profile/ProfileDetails';
+import { ResumeDropzone } from '@/components/profile/ResumeDropzone';
+import { CurrentResume, ResumeList } from '@/components/profile/ResumeList';
+import { MAX_RESUMES } from '@/types/resume.type';
+import { useLocation } from 'react-router-dom';
 
 function SectionHeading({ title, body }: { title: string; body: string }) {
   return (
     <div className="mb-4 flex items-stretch gap-3">
       {/* Small gradient bar marks each section */}
-      <span aria-hidden className="w-1 shrink-0 rounded-full bg-linear-to-b from-indigo-500 to-violet-500" />
+      <span
+        aria-hidden
+        className="w-1 shrink-0 rounded-full bg-linear-to-b from-indigo-500 to-violet-500"
+      />
       <div>
         <h2 className="font-heading text-xl font-semibold">{title}</h2>
         <p className="text-sm text-muted-foreground">{body}</p>
       </div>
     </div>
-  )
+  );
 }
 
 // A rejected thunk throws the message string from rejectWithValue
-const errorText = (e: unknown, fallback: string) => (typeof e === "string" ? e : fallback)
+const errorText = (e: unknown, fallback: string) =>
+  typeof e === 'string' ? e : fallback;
 
 export default function Profile() {
-  const { user } = useAuth()
-  const dispatch = useAppDispatch()
-  const { addFile, deleteFile } = dispatchAuth()
-  const { resumes } = useAuth()
-  const [busy, setBusy] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const { hash } = useLocation() // get hash value #upload-resumes
+  const { user } = useAuth();
+  const dispatch = useAppDispatch();
+  const { addFile, deleteFile } = dispatchAuth();
+  const { resumes } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { hash } = useLocation(); // get hash value #upload-resumes
 
   useEffect(() => {
-    if (!hash || !user) return
-    const el = document.getElementById(hash.slice(1))
-    el?.scrollIntoView({ behavior: "smooth", block: "start" })
-  }, [hash, user])
+    if (!hash || !user) return;
+    const el = document.getElementById(hash.slice(1));
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [hash, user]);
 
-  if (!user) return null
+  if (!user) return null;
 
-  const current = resumes.find((r) => r.isDefault)
-  const atLimit = resumes.length >= MAX_RESUMES
+  const current = resumes.find((r) => r.isDefault);
+  const atLimit = resumes.length >= MAX_RESUMES;
 
   async function handleDelete(id: string) {
-    const name = resumes.find((r) => r.id === id)?.name ?? "resume"
-    setDeletingId(id)
-    const toastId = toast.loading(`Deleting ${name}…`)
+    const name = resumes.find((r) => r.id === id)?.name ?? 'resume';
+    setDeletingId(id);
+    const toastId = toast.loading(`Deleting ${name}…`);
     try {
-      await deleteFile(id)
-      toast.success(`${name} deleted`, { id: toastId })
+      await deleteFile(id);
+      toast.success(`${name} deleted`, { id: toastId });
     } catch (e) {
-      toast.error(`Couldn't delete ${name}`, { id: toastId, description: errorText(e, "Please try again.") })
+      toast.error(`Couldn't delete ${name}`, {
+        id: toastId,
+        description: errorText(e, 'Please try again.'),
+      });
     } finally {
-      setDeletingId(null)
+      setDeletingId(null);
     }
   }
 
   async function addFiles(files: File[]) {
-    const remaining = MAX_RESUMES - resumes.length
+    const remaining = MAX_RESUMES - resumes.length;
     if (remaining <= 0) {
-      toast.error(`You can keep up to ${MAX_RESUMES} resumes`, { description: "Delete one to upload another." })
-      return
+      toast.error(`You can keep up to ${MAX_RESUMES} resumes`, {
+        description: 'Delete one to upload another.',
+      });
+      return;
     }
 
-    const accepted = files.slice(0, remaining)
+    const accepted = files.slice(0, remaining);
     if (accepted.length < files.length) {
       toast.warning(`Uploading ${accepted.length} of ${files.length} files`, {
         description: `You can keep up to ${MAX_RESUMES} resumes.`,
-      })
+      });
     }
 
-    setBusy(true)
+    setBusy(true);
     for (const file of accepted) {
       // one at a time, since the route takes one file per request
-      const id = toast.loading(`Uploading ${file.name}…`)
+      const id = toast.loading(`Uploading ${file.name}…`);
       try {
-        await addFile(file)
-        toast.success(`${file.name} uploaded`, { id })
+        await addFile(file);
+        toast.success(`${file.name} uploaded`, { id });
       } catch (e) {
-        toast.error(`Couldn't upload ${file.name}`, { id, description: errorText(e, "Please try again.") })
+        toast.error(`Couldn't upload ${file.name}`, {
+          id,
+          description: errorText(e, 'Please try again.'),
+        });
       }
     }
-    setBusy(false)
+    setBusy(false);
   }
 
   async function makeDefault(id: string) {
     try {
-      await dispatch(markDefaultResume(id)).unwrap()
-      toast.success("Default resume updated")
+      await dispatch(markDefaultResume(id)).unwrap();
+      toast.success('Default resume updated');
     } catch (e) {
-      toast.error("Couldn't change your default resume", { description: errorText(e, "Please try again.") })
+      toast.error("Couldn't change your default resume", {
+        description: errorText(e, 'Please try again.'),
+      });
     }
   }
 
   return (
     <div className="relative isolate overflow-hidden">
       {/* Soft glow behind the heading, same colours as the landing hero */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72"
+      >
         <div className="absolute top-[-9rem] left-1/2 h-[18rem] w-[40rem] -translate-x-1/2 rounded-full bg-indigo-500/15 blur-3xl dark:bg-indigo-500/20" />
       </div>
 
@@ -112,13 +129,18 @@ export default function Profile() {
               Profile
             </span>
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Your account details and the resumes JobPilot attaches.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your account details and the resumes JobPilot attaches.
+          </p>
         </div>
 
         <ProfileDetails user={user} />
 
         <div>
-          <SectionHeading title="Current resume" body="This resume is attached to your applications by default." />
+          <SectionHeading
+            title="Current resume"
+            body="This resume is attached to your applications by default."
+          />
           <CurrentResume resume={current} />
         </div>
 
@@ -130,7 +152,11 @@ export default function Profile() {
           <ResumeDropzone
             onFiles={addFiles}
             disabled={busy || atLimit}
-            message={atLimit ? `You've reached the limit of ${MAX_RESUMES} resumes. Delete one to upload another.` : undefined}
+            message={
+              atLimit
+                ? `You've reached the limit of ${MAX_RESUMES} resumes. Delete one to upload another.`
+                : undefined
+            }
           />
         </div>
 
@@ -150,5 +176,5 @@ export default function Profile() {
         )}
       </section>
     </div>
-  )
+  );
 }

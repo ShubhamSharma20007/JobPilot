@@ -1,17 +1,18 @@
-import { useState } from "react"
-import { Loader2, ShieldAlert, Trash2, Unplug } from "lucide-react"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { useAuth } from "@/redux/hooks/useAuth"
-import { dispatchAuth } from "@/redux/hooks/dispatchAuth"
-import { SettingRow, SettingsCard } from "./primitives"
-import { useNavigate } from "react-router-dom"
-import { userService } from "@/services/user.service"
+import { useState } from 'react';
+import { Loader2, ShieldAlert, Trash2, Unplug } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/redux/hooks/useAuth';
+import { dispatchAuth } from '@/redux/hooks/dispatchAuth';
+import { SettingRow, SettingsCard } from './primitives';
+import { useNavigate } from 'react-router-dom';
+import { userService } from '@/services/user.service';
 
-type Kind = "revoke" | "delete"
+type Kind = 'revoke' | 'delete';
 
 // A rejected thunk throws the message string from rejectWithValue
-const errorText = (e: unknown, fallback: string) => (typeof e === "string" ? e : fallback)
+const errorText = (e: unknown, fallback: string) =>
+  typeof e === 'string' ? e : fallback;
 
 function ConfirmButton({
   label,
@@ -21,77 +22,95 @@ function ConfirmButton({
   disabled,
   onConfirm,
 }: {
-  label: string
-  confirmLabel: string
-  icon: React.ReactNode
-  busy?: boolean
-  disabled?: boolean
-  onConfirm: () => void | Promise<void>
+  label: string;
+  confirmLabel: string;
+  icon: React.ReactNode;
+  busy?: boolean;
+  disabled?: boolean;
+  onConfirm: () => void | Promise<void>;
 }) {
-  const [confirming, setConfirming] = useState(false)
+  const [confirming, setConfirming] = useState(false);
 
   if (!confirming)
     return (
-      <Button variant="destructive" disabled={disabled} onClick={() => setConfirming(true)}>
+      <Button
+        variant="destructive"
+        disabled={disabled}
+        onClick={() => setConfirming(true)}
+      >
         {icon} {label}
       </Button>
-    )
+    );
 
   return (
     <div className="flex items-center gap-2 sm:justify-end">
-      <Button variant="ghost" disabled={busy} onClick={() => setConfirming(false)}>
+      <Button
+        variant="ghost"
+        disabled={busy}
+        onClick={() => setConfirming(false)}
+      >
         Cancel
       </Button>
       <Button
         variant="destructive"
         disabled={busy}
         onClick={async () => {
-          await onConfirm()
-          setConfirming(false)
+          await onConfirm();
+          setConfirming(false);
         }}
       >
         {busy && <Loader2 className="animate-spin" />}
-        {busy ? "Working…" : confirmLabel}
+        {busy ? 'Working…' : confirmLabel}
       </Button>
     </div>
-  )
+  );
 }
 
 export function DangerZone() {
-  const { user } = useAuth()
-  const { disconnectGmail } = dispatchAuth()
-  const [busy, setBusy] = useState<Kind | null>(null)
-  const connected = !!user?.gmail_connected
-  const { logout } = useAuth()
-  const navigate = useNavigate()
+  const { user } = useAuth();
+  const { disconnectGmail } = dispatchAuth();
+  const [busy, setBusy] = useState<Kind | null>(null);
+  const connected = !!user?.gmail_connected;
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   async function disconnect() {
-    setBusy("revoke")
+    setBusy('revoke');
     try {
-      await disconnectGmail()
-      toast.success("Google disconnected", { description: "Sending has stopped. Reconnect Gmail to start again." })
+      await disconnectGmail();
+      toast.success('Google disconnected', {
+        description: 'Sending has stopped. Reconnect Gmail to start again.',
+      });
     } catch (e) {
-      toast.error("Couldn't disconnect Google", { description: errorText(e, "Please try again.") })
+      toast.error("Couldn't disconnect Google", {
+        description: errorText(e, 'Please try again.'),
+      });
     } finally {
-      setBusy(null)
+      setBusy(null);
     }
   }
 
   async function deleteAll() {
-  setBusy("delete")
-  try {
-    await userService.deleteAccount()
-    await logout()            
-    navigate("/", { replace: true })
-    toast.success("Your account and data were deleted")
-  } catch (e) {
-    toast.error("Couldn't delete your data", { description: "Please try again." })
-  } finally {
-    setBusy(null)
+    setBusy('delete');
+    try {
+      await userService.deleteAccount();
+      await logout();
+      navigate('/', { replace: true });
+      toast.success('Your account and data were deleted');
+    } catch (e) {
+      toast.error("Couldn't delete your data", {
+        description: 'Please try again.',
+      });
+    } finally {
+      setBusy(null);
+    }
   }
-}
 
   return (
-    <SettingsCard icon={ShieldAlert} title="Danger zone" description="These actions can't be undone.">
+    <SettingsCard
+      icon={ShieldAlert}
+      title="Danger zone"
+      description="These actions can't be undone."
+    >
       <SettingRow
         label="Disconnect Google"
         help={
@@ -105,7 +124,7 @@ export function DangerZone() {
             label="Disconnect Google"
             confirmLabel="Yes, disconnect"
             icon={<Unplug />}
-            busy={busy === "revoke"}
+            busy={busy === 'revoke'}
             disabled={!connected}
             onConfirm={disconnect}
           />
@@ -127,5 +146,5 @@ export function DangerZone() {
         </div>
       </SettingRow>
     </SettingsCard>
-  )
+  );
 }

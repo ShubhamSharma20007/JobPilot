@@ -1,10 +1,10 @@
-import { useState } from "react"
-import { useTheme } from "@/context/theme-context"
+import { useState } from 'react';
+import { useTheme } from '@/context/theme-context';
 
-export function DemoMedia({ alt = "Product demo" }: { alt?: string }) {
-  const { theme } = useTheme()
-  const [failed, setFailed] = useState(false)
-  const src = theme === "dark" ? "/demo-dark.gif" : "/demo-light.gif"
+export function DemoMedia({ alt = 'Product demo' }: { alt?: string }) {
+  const { theme } = useTheme();
+  const [failed, setFailed] = useState(false);
+  const src = theme === 'dark' ? '/demo-dark.gif' : '/demo-light.gif';
 
   return (
     <div className="overflow-hidden rounded-2xl border bg-card shadow-2xl shadow-primary/10">
@@ -14,7 +14,11 @@ export function DemoMedia({ alt = "Product demo" }: { alt?: string }) {
         <span className="size-2.5 rounded-full bg-muted-foreground/40" />
       </div>
       {failed ? (
-        <div className="grid aspect-video place-items-center p-8" role="img" aria-label={alt}>
+        <div
+          className="grid aspect-video place-items-center p-8"
+          role="img"
+          aria-label={alt}
+        >
           <div className="w-full max-w-sm space-y-3">
             {[0.9, 0.7, 0.8].map((w, i) => (
               <div
@@ -23,7 +27,7 @@ export function DemoMedia({ alt = "Product demo" }: { alt?: string }) {
                 style={{ width: `${w * 100}%`, animationDelay: `${i * 200}ms` }}
               />
             ))}
-            <div className= "h-9 w-32 animate-pulse rounded-lg bg-primary/80 motion-reduce:animate-none" />
+            <div className="h-9 w-32 animate-pulse rounded-lg bg-primary/80 motion-reduce:animate-none" />
           </div>
         </div>
       ) : (
@@ -36,5 +40,5 @@ export function DemoMedia({ alt = "Product demo" }: { alt?: string }) {
         />
       )}
     </div>
-  )
+  );
 }

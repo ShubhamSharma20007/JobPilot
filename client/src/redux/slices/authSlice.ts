@@ -1,229 +1,249 @@
-import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit"
-import { isAxiosError } from "axios"
-import type { CurrentUserResponse, UpdateProfileInput, UpdateProfileResponse, User } from "@/types/user.type"
-import type { Resume } from "@/types/resume.type"
-import { authService } from "@/services/auth.service"
-import { userService } from "@/services/user.service"
-import { fileService, type DeleteResumeResult } from "@/services/file.service"
-import { gmailService } from "@/services/gmail.service"
+import {
+  createAsyncThunk,
+  createSlice,
+  type PayloadAction,
+} from '@reduxjs/toolkit';
+import { isAxiosError } from 'axios';
+import type {
+  CurrentUserResponse,
+  UpdateProfileInput,
+  UpdateProfileResponse,
+  User,
+} from '@/types/user.type';
+import type { Resume } from '@/types/resume.type';
+import { authService } from '@/services/auth.service';
+import { userService } from '@/services/user.service';
+import { fileService, type DeleteResumeResult } from '@/services/file.service';
+import { gmailService } from '@/services/gmail.service';
 
 type AuthState = {
-  user: User | null
-  resumes: Resume[]
-  status: "idle" | "loading" | "succeeded" | "failed"
-  error: string | null
-  initialized: boolean
-  profileStatus: "idle" | "loading" | "succeeded" | "failed"
-  profileError: string | null
-}
+  user: User | null;
+  resumes: Resume[];
+  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  error: string | null;
+  initialized: boolean;
+  profileStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+  profileError: string | null;
+};
 
 const initialState: AuthState = {
   user: null,
   resumes: [],
-  status: "idle",
+  status: 'idle',
   error: null,
   initialized: false,
-  profileStatus: "idle",
+  profileStatus: 'idle',
   profileError: null,
-}
+};
 
 function errorMessage(e: unknown, fallback: string) {
-  if (isAxiosError(e) && typeof e.response?.data?.detail === "string") return e.response.data.detail
-  return fallback
+  if (isAxiosError(e) && typeof e.response?.data?.detail === 'string')
+    return e.response.data.detail;
+  return fallback;
 }
 
-export const loginWithGoogle = createAsyncThunk<CurrentUserResponse, string, { rejectValue: string }>(
-  "auth/loginWithGoogle",
-  async (credential, { rejectWithValue }) => {
-    try {
-      await authService.verifyToken(credential)
-      return await authService.getMe()
-    } catch (e) {
-      return rejectWithValue(errorMessage(e, "Failed to verify token on backend."))
-    }
+export const loginWithGoogle = createAsyncThunk<
+  CurrentUserResponse,
+  string,
+  { rejectValue: string }
+>('auth/loginWithGoogle', async (credential, { rejectWithValue }) => {
+  try {
+    await authService.verifyToken(credential);
+    return await authService.getMe();
+  } catch (e) {
+    return rejectWithValue(
+      errorMessage(e, 'Failed to verify token on backend.')
+    );
   }
-)
+});
 
 // Returns the user plus their resumes
-export const fetchCurrentUser = createAsyncThunk<CurrentUserResponse>("auth/fetchCurrentUser", async () => {
-  return await authService.getMe()
-})
-
-export const updateProfile = createAsyncThunk<UpdateProfileResponse, UpdateProfileInput, { rejectValue: string }>(
-  "auth/updateProfile",
-  async (input, { rejectWithValue }) => {
-    try {
-      return await userService.updateProfile(input)
-    } catch (e) {
-      return rejectWithValue(errorMessage(e, "Failed to update profile."))
-    }
+export const fetchCurrentUser = createAsyncThunk<CurrentUserResponse>(
+  'auth/fetchCurrentUser',
+  async () => {
+    return await authService.getMe();
   }
-)
+);
 
-export const logout = createAsyncThunk("auth/logout", async () => {
+export const updateProfile = createAsyncThunk<
+  UpdateProfileResponse,
+  UpdateProfileInput,
+  { rejectValue: string }
+>('auth/updateProfile', async (input, { rejectWithValue }) => {
   try {
-    await authService.logout()
-  } catch {
-
+    return await userService.updateProfile(input);
+  } catch (e) {
+    return rejectWithValue(errorMessage(e, 'Failed to update profile.'));
   }
-})
+});
 
+export const logout = createAsyncThunk('auth/logout', async () => {
+  try {
+    await authService.logout();
+  } catch {}
+});
 
 //  Mark default Thunk
 
-export const markDefaultResume = createAsyncThunk<Resume, string, { rejectValue: string }>(
-  "auth/markDefaultResume",
-  async (id, { rejectWithValue }) => {
-    try {
-      return await fileService.markDefault(id)
-    } catch (e) {
-      return rejectWithValue(errorMessage(e, "Could not change your default resume."))
-    }
+export const markDefaultResume = createAsyncThunk<
+  Resume,
+  string,
+  { rejectValue: string }
+>('auth/markDefaultResume', async (id, { rejectWithValue }) => {
+  try {
+    return await fileService.markDefault(id);
+  } catch (e) {
+    return rejectWithValue(
+      errorMessage(e, 'Could not change your default resume.')
+    );
   }
-)
+});
 
-//  delete resume 
+//  delete resume
 
-export const deleteResume = createAsyncThunk<DeleteResumeResult, string, { rejectValue: string }>(
-  "auth/deleteResume",
-  async (id, { rejectWithValue }) => {
-    try {
-      return await fileService.remove(id)
-    } catch (e) {
-      return rejectWithValue(errorMessage(e, "Could not delete the resume."))
-    }
+export const deleteResume = createAsyncThunk<
+  DeleteResumeResult,
+  string,
+  { rejectValue: string }
+>('auth/deleteResume', async (id, { rejectWithValue }) => {
+  try {
+    return await fileService.remove(id);
+  } catch (e) {
+    return rejectWithValue(errorMessage(e, 'Could not delete the resume.'));
   }
-)
+});
 
-// google login with gmail scope 
-export const connectGmail = createAsyncThunk<{ gmail_connected: boolean, gmail_bounce_check: boolean }, string, { rejectValue: string }>(
-  "auth/connectGmail",
-  async (code, { rejectWithValue }) => {
-    try {
-      return await gmailService.connect(code)
-    } catch (e) {
-      return rejectWithValue(errorMessage(e, "Couldn't connect Gmail."))
-    }
+// google login with gmail scope
+export const connectGmail = createAsyncThunk<
+  { gmail_connected: boolean; gmail_bounce_check: boolean },
+  string,
+  { rejectValue: string }
+>('auth/connectGmail', async (code, { rejectWithValue }) => {
+  try {
+    return await gmailService.connect(code);
+  } catch (e) {
+    return rejectWithValue(errorMessage(e, "Couldn't connect Gmail."));
   }
-)
+});
 
-// disconnect gmail 
+// disconnect gmail
 
 export const disconnectGmail = createAsyncThunk<
   { gmail_connected: boolean; gmail_bounce_check: boolean },
   void,
   { rejectValue: string }
->("auth/disconnectGmail", async (_, { rejectWithValue }) => {
+>('auth/disconnectGmail', async (_, { rejectWithValue }) => {
   try {
-    return await gmailService.disconnect()
+    return await gmailService.disconnect();
   } catch (e) {
-    return rejectWithValue(errorMessage(e, "Couldn't disconnect Google."))
+    return rejectWithValue(errorMessage(e, "Couldn't disconnect Google."));
   }
-})
-
+});
 
 const authSlice = createSlice({
-  name: "auth",
+  name: 'auth',
   initialState,
   reducers: {
     setUser: (state, action: PayloadAction<User>) => {
-      state.user = action.payload
+      state.user = action.payload;
     },
     removeUser: (state) => {
-      state.user = null
+      state.user = null;
     },
     // TODO: these two only change local state until the backend has set-default / delete routes
     setDefaultResume: (state, action: PayloadAction<string>) => {
       state.resumes.forEach((r) => {
-        r.isDefault = r.id === action.payload
-      })
+        r.isDefault = r.id === action.payload;
+      });
     },
     removeResume: (state, action: PayloadAction<string>) => {
-      state.resumes = state.resumes.filter((r) => r.id !== action.payload)
-      if (state.resumes.length && !state.resumes.some((r) => r.isDefault)) state.resumes[0].isDefault = true
+      state.resumes = state.resumes.filter((r) => r.id !== action.payload);
+      if (state.resumes.length && !state.resumes.some((r) => r.isDefault))
+        state.resumes[0].isDefault = true;
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(loginWithGoogle.pending, (state) => {
-        state.status = "loading"
-        state.error = null
+        state.status = 'loading';
+        state.error = null;
       })
       .addCase(loginWithGoogle.fulfilled, (state, action) => {
-        const { resumes, ...user } = action.payload
-        state.status = "succeeded"
-        state.user = user
-        state.resumes = resumes ?? []
-        state.initialized = true
+        const { resumes, ...user } = action.payload;
+        state.status = 'succeeded';
+        state.user = user;
+        state.resumes = resumes ?? [];
+        state.initialized = true;
       })
       .addCase(loginWithGoogle.rejected, (state, action) => {
-        state.status = "failed"
-        state.error = action.payload ?? "Login failed."
+        state.status = 'failed';
+        state.error = action.payload ?? 'Login failed.';
       })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
-        const { resumes, ...user } = action.payload
-        state.user = user
-        state.resumes = resumes ?? []
-        state.initialized = true
+        const { resumes, ...user } = action.payload;
+        state.user = user;
+        state.resumes = resumes ?? [];
+        state.initialized = true;
       })
       .addCase(fetchCurrentUser.rejected, (state) => {
-        state.user = null
-        state.resumes = []
-        state.initialized = true
+        state.user = null;
+        state.resumes = [];
+        state.initialized = true;
       })
       .addCase(updateProfile.pending, (state) => {
-        state.profileStatus = "loading"
-        state.profileError = null
+        state.profileStatus = 'loading';
+        state.profileError = null;
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
-        state.profileStatus = "succeeded"
-        state.user = action.payload.user
-        const resume = action.payload.resume
+        state.profileStatus = 'succeeded';
+        state.user = action.payload.user;
+        const resume = action.payload.resume;
         if (resume) {
-          if (resume.isDefault) state.resumes.forEach((r) => (r.isDefault = false))
-          state.resumes.push(resume)
+          if (resume.isDefault)
+            state.resumes.forEach((r) => (r.isDefault = false));
+          state.resumes.push(resume);
         }
       })
       .addCase(updateProfile.rejected, (state, action) => {
-        state.profileStatus = "failed"
-        state.profileError = action.payload ?? "Failed to update profile."
+        state.profileStatus = 'failed';
+        state.profileError = action.payload ?? 'Failed to update profile.';
       })
       .addCase(logout.fulfilled, () => ({
-        ...initialState, initialized: true
+        ...initialState,
+        initialized: true,
       }))
       //  mark defalult
       .addCase(markDefaultResume.fulfilled, (state, action) => {
         state.resumes.forEach((r) => {
-          r.isDefault = r.id === action.payload.id
-        })
+          r.isDefault = r.id === action.payload.id;
+        });
       })
       //  delete resume file
       .addCase(deleteResume.fulfilled, (state, action) => {
-        state.resumes = state.resumes.filter((r) => r.id !== action.payload.id)
-        const { newDefaultId } = action.payload
+        state.resumes = state.resumes.filter((r) => r.id !== action.payload.id);
+        const { newDefaultId } = action.payload;
         if (newDefaultId) {
           state.resumes.forEach((r) => {
-            r.isDefault = r.id === newDefaultId
-          })
+            r.isDefault = r.id === newDefaultId;
+          });
         }
       })
       // google login
       .addCase(connectGmail.fulfilled, (state, action) => {
         if (state.user) {
-          state.user.gmail_connected = action.payload.gmail_connected
-          state.user.gmail_bounce_check = action.payload.gmail_bounce_check
+          state.user.gmail_connected = action.payload.gmail_connected;
+          state.user.gmail_bounce_check = action.payload.gmail_bounce_check;
         }
       })
       // gmail disconnect
       .addCase(disconnectGmail.fulfilled, (state, action) => {
         if (state.user) {
-          state.user.gmail_connected = action.payload.gmail_connected
-          state.user.gmail_bounce_check = action.payload.gmail_bounce_check
+          state.user.gmail_connected = action.payload.gmail_connected;
+          state.user.gmail_bounce_check = action.payload.gmail_bounce_check;
         }
-      })
-
+      });
   },
-})
+});
 
-export const { setUser, removeUser } = authSlice.actions
-export default authSlice.reducer
+export const { setUser, removeUser } = authSlice.actions;
+export default authSlice.reducer;
