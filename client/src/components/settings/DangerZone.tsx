@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/redux/hooks/useAuth"
 import { dispatchAuth } from "@/redux/hooks/dispatchAuth"
 import { SettingRow, SettingsCard } from "./primitives"
+import { useNavigate } from "react-router-dom"
+import { userService } from "@/services/user.service"
 
 type Kind = "revoke" | "delete"
 
@@ -60,7 +62,8 @@ export function DangerZone() {
   const { disconnectGmail } = dispatchAuth()
   const [busy, setBusy] = useState<Kind | null>(null)
   const connected = !!user?.gmail_connected
-
+  const { logout } = useAuth()
+  const navigate = useNavigate()
   async function disconnect() {
     setBusy("revoke")
     try {
@@ -72,6 +75,20 @@ export function DangerZone() {
       setBusy(null)
     }
   }
+
+  async function deleteAll() {
+  setBusy("delete")
+  try {
+    await userService.deleteAccount()
+    await logout()            
+    navigate("/", { replace: true })
+    toast.success("Your account and data were deleted")
+  } catch (e) {
+    toast.error("Couldn't delete your data", { description: "Please try again." })
+  } finally {
+    setBusy(null)
+  }
+}
 
   return (
     <SettingsCard icon={ShieldAlert} title="Danger zone" description="These actions can't be undone.">
@@ -104,10 +121,8 @@ export function DangerZone() {
             label="Delete my data"
             confirmLabel="Yes, delete everything"
             icon={<Trash2 />}
-            onConfirm={() => {
-              // TODO: call your backend
-              console.log("confirmed: delete")
-            }}
+            busy={busy === 'delete'}
+            onConfirm={deleteAll}
           />
         </div>
       </SettingRow>

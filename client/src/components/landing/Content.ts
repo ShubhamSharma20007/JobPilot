@@ -32,10 +32,10 @@ export const FLOW = [
 
 export const FLOW_V2 = [
   { title: "Resume", sub: "Parsed into a profile" },
-  { title: "Find openings", sub: "Job feeds and search" },
-  { title: "Match score", sub: "Only relevant roles" },
-  { title: "Find contact", sub: "Verified recruiter email" },
-  { title: "You approve", sub: "Then it joins your sheet" },
+  { title: "Fresh openings", sub: "Job feeds, updated daily" },
+  { title: "Match score", sub: "Ranked against your skills" },
+  { title: "AI writes email", sub: "From your resume facts" },
+  { title: "Your sheet", sub: "Then the normal paced send" },
 ]
 
 export const FAQ = [
@@ -45,6 +45,7 @@ export const FAQ = [
   { q: "What does it need access to, and is it safe?", a: "Permission to send email and to use the sheet it creates. Your Google tokens are stored encrypted. You can revoke access and delete your data at any time." },
   { q: "How do I find recruiter emails?", a: "For now you add them yourself and JobPilot handles everything after that. Automatic discovery of openings and contacts is planned next, with a review step so you approve each one." },
   { q: "Can I use more than one resume?", a: "Yes. Upload PDFs up to 5 MB each and choose a default, for example one for full stack roles and one for AI roles." },
+  { q: "How do I find recruiter emails?", a: "Add them yourself, grab them with the Chrome extension, or open Find jobs: it lists fresh openings ranked against your resume, and when a post includes a recruiter email, AI apply writes a personalised application and queues it. Posts without an email link to the company's site instead." },
 ]
 
 
@@ -64,10 +65,10 @@ export const PRODUCT_HUNT = {
   url: "https://www.producthunt.com/products/jobpilot-3?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-jobpilot-4",
   postId: "1270220",
 }
-
 export const EXTENSION = {
-  storeUrl: "", // paste the Chrome Web Store URL here once it's published
-  zipUrl: "/jobpilot-extension.zip", // put the zip in client/public/
+  comingSoon: true, // set to false once the Chrome Web Store listing is live
+  storeUrl: "",
+  zipUrl: "/jobpilot-extension.zip",
 }
 
 

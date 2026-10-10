@@ -22,4 +22,6 @@ class RecruiterEmail(Base):
     edited_at = Column(DateTime(timezone=True), server_default=func.now())  # last time the USER changed the address
     sent_at = Column(DateTime(timezone=True), nullable=True)
     failed_at = Column(DateTime(timezone=True), nullable=True)
+    custom_subject = Column(String(200), nullable=True)  # AI-written email (jobs page); NULL = use the template
+    custom_body = Column(Text, nullable=True)
     __table_args__ = (Index("ix_recruiter_queue", "user_id", "status", "created_at"),)

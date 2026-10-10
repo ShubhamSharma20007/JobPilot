@@ -1,4 +1,4 @@
-import { LogOut, Moon, Settings, Sun, TableIcon, User as UserIcon } from "lucide-react"
+import { Briefcase, LogOut, Moon, Settings, Sun, TableIcon, User as UserIcon } from "lucide-react"
 import { useTheme } from "@/context/theme-context"
 import { Switch } from "@/components/settings/primitives"
 import { useNavigate } from "react-router-dom"
@@ -70,6 +70,10 @@ export function UserMenu() {
         <DropdownMenuItem className={itemClass} onClick={() => navigate("/profile")}>
           <UserIcon className={iconClass} />
           Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem className={itemClass} onClick={() => navigate("/jobs")}>
+          <Briefcase className={iconClass} />
+          Find Jobs
         </DropdownMenuItem>
         <DropdownMenuItem className={itemClass} onClick={() => navigate("/sheet")}>
           <TableIcon className={iconClass} />

@@ -19,7 +19,10 @@ from models.user_perference import UserPreference
 from utils.gmail_client import GmailAuthError, GmailSendError, send_message
 from utils.check_bounces import check_bounces
 from utils.cache import invalidate_profile
-
+from utils.job_sources import refresh_jobs
+from models.job_model import Job
+from database.db import SessionLocal
+from sqlalchemy import func
 SETTLE_SECONDS = 10  # an address must be untouched this long before it can be sent
 MAX_ATTEMPTS = 3
 PLACEHOLDER = re.compile(r"\{\{\s*(\w+)\s*\}\}")
@@ -92,7 +95,7 @@ def _claim(db, user_id, limit: int, exclude: set) -> list[tuple]:
         .with_for_update(skip_locked=True)
         .all()
     )
-    claimed = [(r.id, r.email) for r in rows]
+    claimed = [(r.id, r.email, r.custom_subject, r.custom_body) for r in rows]
     for r in rows:
         r.status = "sending"
         r.attempts += 1
@@ -211,13 +214,13 @@ def sync_user(user_id) -> None:
                 resume = _default_resume(db, user)
                 if resume is None:  # the template says "my resume is attached"
                     print("sync_user: no resume available for", user_id)
-                    _release(db, [r for r, _ in batch])
+                    _release(db, [r[0] for r in batch])
                     return
             data, filename = resume
 
-            for i, (row_id, email) in enumerate(batch):
+            for i, (row_id, email, custom_subject, custom_body) in enumerate(batch):
                 done.add(row_id)
-                rest = [r for r, _ in batch[i:]]
+                rest = [b[0] for b in batch[i:]]
 
                 # Repeat cool-down
                 last = _recently_sent(db, user_id, email, prefs.cooldown_days)
@@ -246,14 +249,21 @@ def sync_user(user_id) -> None:
                     return
 
                 # Template
-                values = _vars_for(email, sender_name)
-                subject, miss_a = _render(prefs.subject, values)
-                body, miss_b = _render(prefs.body, values)
-                missing = miss_a | miss_b
+                if custom_body:  # written by AI apply: final text, no placeholders
+                    subject = custom_subject or prefs.subject
+                    body = custom_body
+                    missing = set()
+                else:
+                    values = _vars_for(email, sender_name)
+                    subject, miss_a = _render(prefs.subject, values)
+                    body, miss_b = _render(prefs.body, values)
+                    missing = miss_a | miss_b
                 if missing:
                     names = ", ".join("{{" + m + "}}" for m in sorted(missing))
                     _fail(db, prefs, sender_email, token, row_id, email, f"Template uses unknown placeholder(s): {names}")
                     continue
+
+                print("sync_user: sending to", email, "| mode:", "custom" if custom_body else "template")
 
                 msg = EmailMessage()
                 msg["From"] = formataddr((sender_name.replace("\n", " ").replace("\r", " "), sender_email))
@@ -383,13 +393,25 @@ def recover_interrupted() -> None:
     finally:
         db.close()
 
+def _jobs_are_fresh(hours: int = 24) -> bool:
+    db = SessionLocal()
+    try:
+        newest = db.query(func.max(Job.created_at)).filter(Job.added_by.is_(None)).scalar()
+    finally:
+        db.close()
+    return bool(newest and newest > datetime.now(timezone.utc) - timedelta(hours=hours))
+
+first_run = None if _jobs_are_fresh(24) else datetime.now(timezone.utc)
 
 def start_scheduler() -> None:
     recover_interrupted()
-    # scheduler.add_job(tick, "interval", seconds=60, id="tick", max_instances=1, coalesce=True)
-    # scheduler.add_job(send_summaries, "interval", minutes=5, id="summaries", max_instances=1, coalesce=True)
-    # scheduler.add_job(check_bounces, "interval", minutes=10, id="bounces", max_instances=1, coalesce=True)
     scheduler.add_job(tick, "interval", minutes=2, id="tick", max_instances=1, coalesce=True)
     scheduler.add_job(send_summaries, "interval", minutes=30, id="summaries", max_instances=1, coalesce=True)
     scheduler.add_job(check_bounces, "interval", minutes=30, id="bounces", max_instances=1, coalesce=True)
+    # job pool for the /jobs page: once at startup, then every 6 hours, shared by all users
+    scheduler.add_job(
+        refresh_jobs, "interval", days=1, id="jobs",
+        max_instances=1, coalesce=True,
+        next_run_time=datetime.now(timezone.utc),
+    )
     scheduler.start()

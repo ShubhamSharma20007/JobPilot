@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy import text
 
-from routes import auth_router, user_router,file_route,settings_route,gmail_route,sheet_route
+from routes import auth_router, user_router,file_route,settings_route,gmail_route,sheet_route,jobs_route
 from config.config import config
 from database.db import engine, Base
 from middlewares.auth_middleware import auth_middleware
@@ -39,6 +39,7 @@ app.include_router(file_route.router, prefix="/file", tags=["file"])
 app.include_router(settings_route.router, prefix="/settings", tags=["settings"])
 app.include_router(gmail_route.router, prefix="/gmail", tags=["gmail"])
 app.include_router(sheet_route.router, prefix="/sheet", tags=["sheet"])
+app.include_router(jobs_route.router, prefix="/jobs", tags=["jobs"])
 
 
 @app.on_event("startup")

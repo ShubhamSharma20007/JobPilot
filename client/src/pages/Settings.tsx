@@ -11,6 +11,7 @@ import { TemplateSettings } from "@/components/settings/TemplateSettings"
 import { NotificationSettings } from "@/components/settings/NotificationSettings"
 import { DangerZone } from "@/components/settings/DangerZone"
 import { GmailSettings } from "@/components/settings/GmailSettings"
+import { AiSettings } from "@/components/settings/AiSettings"
 import { gradientBtn } from "@/components/settings/primitives"
 import Loader from "@/components/Loader"
 
@@ -110,6 +111,7 @@ export default function Settings() {
         <GmailSettings />
         <SendingSettings value={draft} onChange={patch} />
         <TemplateSettings value={draft} onChange={patch} email={user.email} name={user.name ?? user.email} />
+        <AiSettings />
         <NotificationSettings value={draft} onChange={patch} />
         <DangerZone />
 

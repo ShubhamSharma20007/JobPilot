@@ -169,16 +169,16 @@ export function Pipeline() {
         </Reveal>
 
         <Reveal>
-          <span className="mt-16 inline-flex items-center gap-2 rounded-full border border-dashed border-indigo-500/40 bg-indigo-500/5 px-3 py-1 text-xs font-medium text-indigo-500">
+          <span className="mt-16 inline-flex items-center gap-2 rounded-full border border-indigo-500/40 bg-indigo-500/5 px-3 py-1 text-xs font-medium text-indigo-500">
             <span className="size-1.5 rounded-full bg-indigo-500" />
-            Coming next
+            New
           </span>
-          <h3 className="mt-3 font-heading text-2xl font-semibold">Finding recruiters for you</h3>
+          <h3 className="mt-3 font-heading text-2xl font-semibold">Finding jobs for you</h3>
           <p className="mt-2 max-w-xl text-muted-foreground">
-            Openings and contacts will be found from your resume, then wait for your approval before joining the same flow.
+            Openings are ranked against your resume. AI apply writes the email, then it joins the same flow above.
           </p>
           <div className="mt-6">
-            <FlowRow nodes={FLOW_V2} dashed />
+            <FlowRow nodes={FLOW_V2} />   {/* remove `dashed`, it's real now */}
           </div>
         </Reveal>
       </div>

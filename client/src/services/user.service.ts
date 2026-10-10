@@ -13,6 +13,9 @@ class UserService {
     })
     return res.data
   }
+  async deleteAccount(): Promise<void> {
+    await instance.delete("/user/profile")
+  }
 }
 
 export const userService = new UserService()

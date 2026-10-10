@@ -9,7 +9,7 @@ const gradientText = "bg-linear-to-r from-indigo-500 to-violet-500 bg-clip-text 
 const INSTALL = ["Unzip the download", "Open chrome://extensions", "Turn on Developer mode", "Click Load unpacked"]
 
 const SHEET_ROWS = ["hr@globex.io", "talent@initech.dev"]
-
+const soon = EXTENSION.comingSoon
 function Logo({ className = "size-7" }: { className?: string }) {
   return (
     <svg viewBox="0 0 64 64" className={className} aria-hidden>
@@ -66,9 +66,8 @@ function Demo() {
                   type="button"
                   onClick={() => setAdded((a) => !a)}
                   aria-pressed={added}
-                  className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[10px] px-3 text-sm font-medium text-white transition active:translate-y-px ${
-                    added ? "bg-emerald-500" : "bg-linear-to-r from-indigo-500 to-violet-500 hover:opacity-90"
-                  }`}
+                  className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[10px] px-3 text-sm font-medium text-white transition active:translate-y-px ${added ? "bg-emerald-500" : "bg-linear-to-r from-indigo-500 to-violet-500 hover:opacity-90"
+                    }`}
                 >
                   {added ? <Check className="size-3.5" /> : <Plus className="size-3.5" />}
                   {added ? "Added" : "Add"}
@@ -91,9 +90,8 @@ function Demo() {
                 </li>
               ))}
               <li
-                className={`flex items-center gap-3 px-4 py-2.5 transition-colors duration-500 ${
-                  added ? "bg-emerald-500/10" : ""
-                }`}
+                className={`flex items-center gap-3 px-4 py-2.5 transition-colors duration-500 ${added ? "bg-emerald-500/10" : ""
+                  }`}
               >
                 <span className="w-4 text-xs text-muted-foreground">3</span>
                 {added ? (
@@ -136,6 +134,11 @@ export function ExtensionSection() {
           <span className="inline-flex items-center gap-2 rounded-full border bg-background/60 px-3 py-1 text-xs font-medium backdrop-blur">
             <Puzzle className="size-3.5 text-indigo-500" />
             Chrome extension
+            {soon && (
+              <span className="rounded-full border border-dashed border-indigo-500/40 bg-indigo-500/5 px-1.5 py-0.5 text-[10px] leading-none text-indigo-500">
+                Coming soon
+              </span>
+            )}
           </span>
           <h2 className="mt-4 font-heading text-4xl font-bold tracking-tight">
             Found an email? <span className={gradientText}>Add it without leaving the page.</span>
@@ -145,15 +148,26 @@ export function ExtensionSection() {
             sends it to your sheet. Duplicates are caught for you.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a
-              href={hasStore ? EXTENSION.storeUrl : EXTENSION.zipUrl}
-              {...(hasStore ? { target: "_blank", rel: "noopener noreferrer" } : { download: "jobpilot-extension.zip" })}
-              className={buttonVariants({ size: "lg", className: "h-11 px-6 text-base" })}
-            >
-              <Download />
-              {hasStore ? "Add to Chrome" : "Download extension"}
-            </a>
-            <span className="text-sm text-muted-foreground">Free. Works in Chrome, Edge and Brave.</span>
+            {soon ? (
+              <span
+                aria-disabled
+                className={buttonVariants({ variant: "outline", size: "lg", className: "h-11 cursor-not-allowed px-6 text-base opacity-70" })}
+              >
+                <Puzzle /> Coming soon
+              </span>
+            ) : (
+              <a
+                href={hasStore ? EXTENSION.storeUrl : EXTENSION.zipUrl}
+                {...(hasStore ? { target: "_blank", rel: "noopener noreferrer" } : { download: "jobpilot-extension.zip" })}
+                className={buttonVariants({ size: "lg", className: "h-11 px-6 text-base" })}
+              >
+                <Download />
+                {hasStore ? "Add to Chrome" : "Download extension"}
+              </a>
+            )}
+            <span className="text-sm text-muted-foreground">
+              {soon ? "Under review by the Chrome Web Store." : "Free. Works in Chrome, Edge and Brave."}
+            </span>
           </div>
         </Reveal>
 
@@ -162,7 +176,7 @@ export function ExtensionSection() {
         </Reveal>
 
         {/* Install stepper, only for the zip route */}
-        {!hasStore && (
+        {!hasStore && !soon && (
           <Reveal className="mx-auto mt-14 max-w-4xl">
             <p className="text-center text-sm font-medium text-muted-foreground">
               Not on the Chrome Web Store yet, so install it by hand. It takes about a minute.

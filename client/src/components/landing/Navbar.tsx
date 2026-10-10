@@ -1,7 +1,7 @@
 import { ThemeToggle } from "./ThemeToggle"
 import { GoogleSignIn } from "./GoogleSignIn"
 import { UserMenu } from "./UserMenu"
-import { APP } from "./Content"
+import { APP, EXTENSION } from "./Content"
 import { Link } from "react-router-dom"
 import { useAuth } from "@/redux/hooks/useAuth"
 const LINKS = [
@@ -9,12 +9,12 @@ const LINKS = [
   { href: "#pipeline", label: "Flow" },
   { href: "#features", label: "Features" },
   { href: "#faq", label: "FAQ" },
-  { href: "#extension", label: "Extension" },
+  { href: "#extension", label: "Extension", soon: true },
 ]
 
 export function Navbar() {
   const { user, initialized } = useAuth()
-  
+
 
 
 
@@ -33,26 +33,35 @@ export function Navbar() {
 
         <div className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
           {LINKS.map((l) => (
-            <Link key={l.href} to={{ pathname: "/", hash: l.href }} className="hover:text-foreground">
+            <Link
+              key={l.href}
+              to={{ pathname: "/", hash: l.href }}
+              className="inline-flex items-center gap-1.5 hover:text-foreground"
+            >
               {l.label}
+              {l.soon && EXTENSION.comingSoon && (
+                <span className="rounded-full border border-dashed border-indigo-500/40 bg-indigo-500/5 px-1.5 py-0.5 text-[10px] leading-none font-medium text-indigo-500">
+                  Soon
+                </span>
+              )}
             </Link>
           ))}
         </div>
         <div className="flex items-center gap-2">
-  {!initialized ? (
-    <>
-      <ThemeToggle />
-      <div className="h-10 w-[180px]" />
-    </>
-  ) : user ? (
-    <UserMenu />
-  ) : (
-    <>
-      <ThemeToggle />
-      <GoogleSignIn />
-    </>
-  )}
-</div>
+          {!initialized ? (
+            <>
+              <ThemeToggle />
+              <div className="h-10 w-[180px]" />
+            </>
+          ) : user ? (
+            <UserMenu />
+          ) : (
+            <>
+              <ThemeToggle />
+              <GoogleSignIn />
+            </>
+          )}
+        </div>
       </nav>
     </header>
   )

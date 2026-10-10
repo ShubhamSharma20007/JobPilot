@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import HTTPException, Request, UploadFile, status
+from fastapi import HTTPException, Request, UploadFile, status,Response
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from utils.user_payload import user_out
@@ -11,6 +11,10 @@ from schemas.user_schema import UserResponse
 from utils.upload_file import deleteFile, uploadFile
 from utils.preferences import kick_sync
 from utils.cache import invalidate_profile
+from models.oauth_token_model import OAuthToken
+from config.cookiOptions import COOKIE_OPTIONS
+from controllers.gmail_controller import _revoke_at_google
+from utils.cache import invalidate_profile, cache_delete, settings_key
 MAX_RESUME_BYTES = 5 * 1024 * 1024  # matches the 5 MB limit shown in the UI
 MAX_RESUMES = 5  
 
@@ -121,3 +125,48 @@ def update_profile(
         "user": user_out(db, user),
         "resume": resume_out(record) if record else None,
     }
+
+from fastapi import Response
+from models.oauth_token_model import OAuthToken
+from config.cookiOptions import COOKIE_OPTIONS
+from controllers.gmail_controller import _revoke_at_google
+from utils.cache import invalidate_profile, cache_delete, settings_key
+
+
+def delete_profile(request: Request, db: Session):
+    user = _get_user(request, db)
+    user_id = user.id
+
+    # Collect everything we need before the rows disappear
+    storage_ids = [
+        f.storage_file_id
+        for f in db.query(FileModel).filter(FileModel.user_id == user_id).all()
+        if f.storage_file_id
+    ]
+    token = db.get(OAuthToken, user_id)
+    if token:
+        _revoke_at_google(token)  # best effort, never raises
+
+    try:
+        db.delete(user)  # ON DELETE CASCADE removes all of this user's data
+        db.commit()
+    except SQLAlchemyError as e:
+        db.rollback()
+        print("DB error:", e)
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
+
+    # After the commit, so a failure here never leaves half-deleted data
+    invalidate_profile(user_id)
+    cache_delete(settings_key(user_id))
+    for sid in storage_ids:
+        deleteFile(sid)
+
+    response = Response(status_code=status.HTTP_204_NO_CONTENT)
+    response.delete_cookie(
+        key=COOKIE_OPTIONS["key"],
+        path=COOKIE_OPTIONS["path"],
+        httponly=COOKIE_OPTIONS["httponly"],
+        secure=COOKIE_OPTIONS["secure"],
+        samesite=COOKIE_OPTIONS["samesite"],
+    )
+    return response

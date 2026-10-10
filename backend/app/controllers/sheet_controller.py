@@ -91,6 +91,7 @@ def save_rows(req: Request, db: Session, rows: list[RowIn]) -> dict:
     db.query(RecruiterEmail).filter(
         RecruiterEmail.user_id == user_id,
         RecruiterEmail.status.in_(("draft", "pending", "failed")),
+        RecruiterEmail.custom_body.is_(None),  # keep AI-queued rows even if this grid is stale
         ~RecruiterEmail.id.in_(ids),
     ).delete(synchronize_session=False)
 

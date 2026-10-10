@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
-from controllers.user_controller import update_profile
+from controllers.user_controller import update_profile,delete_profile
 from database.db import get_db
 
 router = APIRouter()
@@ -17,3 +17,12 @@ def update_user_profile(
 ):
     """Multipart form: optional `name`, optional `resume` (PDF), optional `make_default`."""
     return update_profile(request, db, name, resume, make_default)
+
+
+@router.delete('/profile',status_code=status.HTTP_204_NO_CONTENT)
+def delete_user_profile(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Delete user profile."""
+    return delete_profile(request, db)

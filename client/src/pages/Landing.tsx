@@ -1,5 +1,5 @@
 import { Hero, Stats, HowItWorks, Pipeline, Features, Faq, FinalCta } from "@/components/landing/Sections"
-import { ComingSoon } from "@/components/landing/ComingSoon"
+import { AiJobs } from "@/components/landing/AiJobs"
 import { ExtensionSection } from "@/components/landing/ExtensionSection"
 
 export default function Landing() {
@@ -11,7 +11,7 @@ export default function Landing() {
       <Pipeline />
       <Features />
       <ExtensionSection />
-      <ComingSoon />
+      <AiJobs />
       <Faq />
       <FinalCta />
     </>

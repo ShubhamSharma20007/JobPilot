@@ -14,6 +14,7 @@ import { notifyExtensionLoggedIn } from "./utils/extension"
 const Profile = lazy(() => import("@/pages/Profile"))
 const Settings = lazy(() => import("@/pages/Settings"))
 const Sheet = lazy(() => import("@/pages/Sheet"))
+const Jobs = lazy(() => import("@/pages/Jobs"))
 const Privacy = lazy(() => import("@/pages/Legal").then((m) => ({ default: m.Privacy })))
 const Terms = lazy(() => import("@/pages/Legal").then((m) => ({ default: m.Terms })))
 
@@ -51,6 +52,7 @@ useEffect(() => {
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="sheet" element={<Sheet />} />
+            <Route path="jobs" element={<Jobs />} />
           </Route>
           <Route path="privacy" element={<Privacy />} />
           <Route path="terms" element={<Terms />} />

@@ -29,5 +29,8 @@ config = {
     "IMAGEKIT_URL_ENDPOINT":getKey('IMAGEKIT_URL_ENDPOINT') or None,
     "ENCRYPTION_KEY":getKey('ENCRYPTION_KEY') or None,
     "REDIS_URL": getKey("REDIS_URL") or None,
-    "RENDER":getKey('RENDER') or ""
+    "RENDER":getKey('RENDER') or "",
+    "ADZUNA_APP_ID": getKey("ADZUNA_APP_ID"),
+    "ADZUNA_APP_KEY": getKey("ADZUNA_APP_KEY"),
+    "OPENWEBNINJA_API_KEY": getKey("OPENWEBNINJA_API_KEY"),
 }

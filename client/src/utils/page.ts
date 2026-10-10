@@ -4,12 +4,14 @@ export const pages = {
   profile: () => import("@/pages/Profile"),
   settings: () => import("@/pages/Settings"),
   sheet: () => import("@/pages/Sheet"),
+  jobs: () => import("@/pages/Jobs"),
   legal: () => import("@/pages/Legal"),
 }
 
 export function prefetchPages() {
   const run = () => {
     pages.sheet().catch(() => {})
+    pages.jobs().catch(() => {})
     pages.settings().catch(() => {})
     pages.profile().catch(() => {})
   }
