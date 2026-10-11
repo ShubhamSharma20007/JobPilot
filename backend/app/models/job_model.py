@@ -23,7 +23,7 @@ class Job(Base):
     contact_email = Column(String(320), nullable=True)
     posted_at = Column(DateTime(timezone=True), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    dedupe_hash = Column(String(40), nullable=False, unique=True)
+    dedupe_hash = Column(String(40), nullable=False, unique=True) # for de-duplication
     added_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
 
 

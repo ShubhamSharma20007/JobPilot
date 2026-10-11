@@ -24,4 +24,6 @@ class RecruiterEmail(Base):
     failed_at = Column(DateTime(timezone=True), nullable=True)
     custom_subject = Column(String(200), nullable=True)  # AI-written email (jobs page); NULL = use the template
     custom_body = Column(Text, nullable=True)
+    followup_checked_at = Column(DateTime(timezone=True), nullable=True)  # set once we looked for a reply / queued a follow-up
+    reply_to_gmail_id = Column(String, nullable=True)  # set on a follow-up row: Gmail id of the first email it replies to
     __table_args__ = (Index("ix_recruiter_queue", "user_id", "status", "created_at"),)

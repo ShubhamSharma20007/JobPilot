@@ -8,6 +8,7 @@ import { settingsService } from '@/services/settings.service';
 import type { AppSettings } from '@/types/settings.type';
 import { SendingSettings } from '@/components/settings/SendingSettings';
 import { TemplateSettings } from '@/components/settings/TemplateSettings';
+import { FollowUpSettings } from '@/components/settings/FollowUpSetting';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
 import { DangerZone } from '@/components/settings/DangerZone';
 import { GmailSettings } from '@/components/settings/GmailSettings';
@@ -128,6 +129,7 @@ export default function Settings() {
           email={user.email}
           name={user.name ?? user.email}
         />
+        <FollowUpSettings value={draft} onChange={patch} />
         <AiSettings />
         <NotificationSettings value={draft} onChange={patch} />
         <DangerZone />

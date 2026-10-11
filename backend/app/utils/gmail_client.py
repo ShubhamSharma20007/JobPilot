@@ -72,16 +72,17 @@ def _access_token(db: Session, row: OAuthToken) -> str:
     return _refresh(db, row)
 
 
-def send_message(db: Session, row: OAuthToken, msg: EmailMessage) -> str:
+def send_message(db: Session, row: OAuthToken, msg: EmailMessage, thread_id: str | None = None) -> str:
     """Send through the Gmail API as the connected user. Returns the Gmail message id."""
     raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+    payload = {"raw": raw, "threadId": thread_id} if thread_id else {"raw": raw}  # threadId = reply inside the same conversation
 
     def _post(token: str) -> requests.Response:
         try:
             return requests.post(
                 SEND_URL,
                 headers={"Authorization": f"Bearer {token}"},
-                json={"raw": raw},
+                json=payload,
                 timeout=20,
             )
         except requests.RequestException:

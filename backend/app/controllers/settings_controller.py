@@ -20,6 +20,8 @@ _FIELDS = (
     "body",
     "notify_on_failure",
     "notify_daily_summary",
+    "followup_enabled",
+    "followup_days",
 )
 
 
