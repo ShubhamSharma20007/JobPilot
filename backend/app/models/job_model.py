@@ -25,6 +25,7 @@ class Job(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     dedupe_hash = Column(String(40), nullable=False, unique=True) # for de-duplication
     added_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    category = Column(String(32), nullable=True, index=True)  # software | design | finance | ... | other
 
 
 class UserJob(Base):

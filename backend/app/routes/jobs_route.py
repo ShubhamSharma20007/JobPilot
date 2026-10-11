@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
 from controllers.jobs_controller import (
@@ -9,9 +9,8 @@ from controllers.jobs_controller import (
 )
 from database.db import get_db
 from utils.cache import rate_limit
-
+from utils.job_sources import fetch_for_titles
 router = APIRouter()
-
 
 @router.get("", status_code=status.HTTP_200_OK)
 def read_jobs(
@@ -22,13 +21,12 @@ def read_jobs(
     location: str | None = Query(None, max_length=60),
     remote: bool = False,
     max_age_days: int = Query(0, ge=0, le=365),
-    sources: str | None = Query(None, max_length=120),  # comma separated: hn,remotive,greenhouse,lever
+    sources: str | None = Query(None, max_length=120),
     sort: str = Query("match", pattern="^(match|new)$"),
+    category: str | None = Query(None, max_length=20),
     db: Session = Depends(get_db),
 ):
-    return list_jobs(request, db, q, only_email, page, location, remote, max_age_days, sources, sort)
-
-
+    return list_jobs(request, db, q, only_email, page, location, remote, max_age_days, sources, sort, category)
 @router.post("/{job_id}/apply", dependencies=[Depends(rate_limit("job_apply", 60, 3600))], status_code=status.HTTP_200_OK)
 def apply(job_id: uuid.UUID, request: Request, db: Session = Depends(get_db)):
     return apply_job(request, db, job_id)
@@ -66,5 +64,10 @@ def ai_test(request: Request, db: Session = Depends(get_db)):
 
 
 @router.post("/ai/profile", dependencies=[Depends(rate_limit("ai_profile", 10, 3600))], status_code=status.HTTP_200_OK)
-def ai_profile(request: Request, db: Session = Depends(get_db)):
-    return refresh_profile(request, db)
+def ai_profile(request: Request, background: BackgroundTasks, db: Session = Depends(get_db)):
+    out = refresh_profile(request, db)
+    profile = out.get("profile") or {}
+    titles = profile.get("titles") or []
+    if titles:
+        background.add_task(fetch_for_titles, titles, False, profile.get("domain"))
+    return out

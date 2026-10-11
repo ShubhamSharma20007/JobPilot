@@ -13,16 +13,21 @@ export interface Job {
   score: number | null;
   status: 'new' | 'queued' | 'skipped';
   mine: boolean;
+  category: string | null;
 }
-
 export interface JobsResponse {
   jobs: Job[];
   total: number;
   pageSize: number;
+  stage: 'no_resume' | 'no_ai' | 'needs_profile' | 'ready';
   aiReady: boolean;
   profileReady: boolean;
   appliedToday: number;
   aiDailyLimit: number;
+  domain: string | null;
+  category: string | null; // the category the server actually applied
+  categories: { value: string; label: string }[];
+  profile: { headline: string; titles: string[] } | null;
 }
 
 export interface AiProfile {
@@ -64,15 +69,15 @@ export interface JobFilters {
   maxAgeDays?: number;
   sources?: string[];
   sort?: 'match' | 'new';
+  category?: string;
 }
-
 export interface ModelList {
   models: string[];
   live: boolean;
 }
 
 class JobsService {
-  async list(f: JobFilters) {
+   async list(f: JobFilters) {
     const res = await instance.get<JobsResponse>('/jobs', {
       params: {
         q: f.q || undefined,
@@ -83,6 +88,7 @@ class JobsService {
         max_age_days: f.maxAgeDays || undefined,
         sources: f.sources?.length ? f.sources.join(',') : undefined,
         sort: f.sort ?? 'match',
+        category: f.category || undefined,
       },
     });
     return res.data;

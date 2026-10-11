@@ -3,24 +3,26 @@ import io
 
 from pypdf import PdfReader
 
+from utils.categories import CATEGORY_KEYS, classify
 from utils.llm import LLMError, complete_json
 
 MAX_CHARS = 12_000
 
 SYSTEM = (
-    "You extract facts from resumes. Use only what the resume says. "
+    "You extract facts from resumes of people in ANY profession. Use only what the resume says. "
     "Never invent skills, employers, numbers or dates. Reply with JSON only."
 )
 
 PROMPT = """Read this resume and return JSON with exactly these keys:
 - "name": full name or null
-- "headline": one line, e.g. "Full Stack Developer, 3 years"
-- "titles": up to 5 job titles this person should apply for (strings)
-- "skills": up to 40 technical skills, tools and frameworks, as short lowercase strings
+- "headline": one line, e.g. "Staff Nurse, 4 years" or "Full Stack Developer, 3 years"
+- "domain": the ONE field this person works in, exactly one of: {domains}
+- "titles": up to 5 job titles this person should apply for, most relevant first (strings)
+- "skills": up to 40 skills, tools, software, certifications or methods used in THEIR field, as short lowercase strings
 - "years_experience": number or null
 - "location": city/country or null
 - "summary": 2 sentences describing the strongest experience, using only resume facts
-- "highlights": up to 4 concrete achievements or projects copied from the resume in your own short words
+- "highlights": up to 4 concrete achievements or projects from the resume in your own short words
 
 RESUME:
 {text}"""
@@ -39,16 +41,26 @@ def extract_text(pdf_bytes: bytes) -> str:
 
 
 def parse_resume(pdf_bytes: bytes, provider: str, key: str, model: str) -> dict:
-    data = complete_json(provider, key, model, SYSTEM, PROMPT.format(text=extract_text(pdf_bytes)))
+    prompt = PROMPT.format(text=extract_text(pdf_bytes), domains=", ".join(CATEGORY_KEYS))
+    data = complete_json(provider, key, model, SYSTEM, prompt)
 
     def strs(v, n):
         return [str(x).strip()[:80] for x in (v if isinstance(v, list) else []) if str(x).strip()][:n]
 
+    titles = strs(data.get("titles"), 5)
+    skills = [s.lower() for s in strs(data.get("skills"), 40)]
+
+    domain = data.get("domain")
+    if domain not in CATEGORY_KEYS or domain == "other":
+        # the model gave nothing useful, so decide from titles and skills ourselves
+        domain = classify(" ".join(titles), " ".join(skills))
+
     return {
         "name": data.get("name") if isinstance(data.get("name"), str) else None,
         "headline": str(data.get("headline") or "")[:160],
-        "titles": strs(data.get("titles"), 5),
-        "skills": [s.lower() for s in strs(data.get("skills"), 40)],
+        "domain": domain,
+        "titles": titles,
+        "skills": skills,
         "years_experience": data.get("years_experience") if isinstance(data.get("years_experience"), (int, float)) else None,
         "location": data.get("location") if isinstance(data.get("location"), str) else None,
         "summary": str(data.get("summary") or "")[:500],

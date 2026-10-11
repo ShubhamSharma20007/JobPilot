@@ -23,6 +23,8 @@ from utils.preferences import ensure_preferences, kick_sync
 from utils.request_user import get_user_id
 from utils.resume_parser import parse_resume
 from utils.user_payload import GMAIL_SEND_SCOPE
+from utils.categories import CATEGORY_KEYS, CATEGORY_OPTIONS, classify
+
 
 MAX_AI_DAILY = 50
 PAGE_SIZE = 60
@@ -215,19 +217,57 @@ def _job_out(j: Job, uj: UserJob | None, score) -> dict:
         "score": score,
         "status": uj.status if uj else "new",
         "mine": j.added_by is not None,
+        "category": j.category,
     }
+
+
+def _stage(db: Session, user_id, row: UserAI | None) -> str:
+    if not _default_file_id(db, user_id):
+        return "no_resume"
+    if not (row and row.key_enc):
+        return "no_ai"
+    if not _profile_ready(db, user_id, row):
+        return "needs_profile"   # resume is new or the default resume changed
+    return "ready"
 
 
 def list_jobs(
     req: Request, db: Session, q: str | None, only_email: bool, page: int,
     location: str | None, remote: bool, max_age_days: int, sources: str | None, sort: str,
+    category: str | None = None,
 ) -> dict:
     user_id = get_user_id(req)
     row = _ai_row(db, user_id)
-    profile = row.profile if _profile_ready(db, user_id, row) else None
+    stage = _stage(db, user_id, row)
     prefs = ensure_preferences(db, user_id)
 
+    out = {
+            "jobs": [], "total": 0, "pageSize": PAGE_SIZE,
+            "stage": stage,
+            "aiReady": bool(row and row.key_enc),
+            "profileReady": stage == "ready",
+            "appliedToday": _applied_today(db, user_id, prefs.timezone),
+            "aiDailyLimit": row.daily_limit if row else 10,
+            "domain": None, "category": None, "categories": CATEGORY_OPTIONS,
+            "profile": None,
+        }
+    if stage != "ready":
+        return out    # no resume or no parsed profile = no jobs
+
+    profile = row.profile
+    # older profiles have no "domain", so work it out instead of forcing a re-parse
+    domain = profile.get("domain")
+    if domain not in CATEGORY_KEYS:
+        domain = classify(" ".join(profile.get("titles") or []), " ".join(profile.get("skills") or []))
+
+    if category in (*CATEGORY_KEYS, "all"):
+        effective = category                      # the user picked a chip
+    else:
+        effective = domain if domain != "other" else "all"   # default: their own field
+
     query = db.query(Job).filter(or_(Job.added_by.is_(None), Job.added_by == user_id))
+    if effective != "all":
+        query = query.filter(Job.category == effective)
     if q:
         like = f"%{q.strip()[:80]}%"
         query = query.filter(or_(Job.title.ilike(like), Job.company.ilike(like), Job.description.ilike(like)))
@@ -244,9 +284,7 @@ def list_jobs(
     if wanted:
         query = query.filter(Job.source.in_(wanted))
 
-    jobs = (
-        query.order_by(func.coalesce(Job.posted_at, Job.created_at).desc()).limit(600).all()
-    )
+    jobs = query.order_by(func.coalesce(Job.posted_at, Job.created_at).desc()).limit(600).all()
 
     states = {
         uj.job_id: uj
@@ -254,20 +292,21 @@ def list_jobs(
     }
     items = [(j, states.get(j.id), _score(profile, j)) for j in jobs]
     items = [t for t in items if not (t[1] and t[1].status == "skipped")]
-    if profile and sort == "match":
-        items.sort(key=lambda t: (t[2] or 0), reverse=True)  # stable: newest first within equal scores
+    if sort == "match":
+        items.sort(key=lambda t: (t[2] or 0), reverse=True)
 
     start = max(0, page) * PAGE_SIZE
-    return {
+    out.update({
         "jobs": [_job_out(*t) for t in items[start:start + PAGE_SIZE]],
         "total": len(items),
-        "pageSize": PAGE_SIZE,
-        "aiReady": bool(row and row.key_enc),
-        "profileReady": profile is not None,
-        "appliedToday": _applied_today(db, user_id, prefs.timezone),
-        "aiDailyLimit": row.daily_limit if row else 10,
-    }
-
+        "domain": domain,
+        "category": effective,
+        "profile": {
+            "headline": profile.get("headline") or "",
+            "titles": (profile.get("titles") or [])[:3],
+        },
+    })
+    return out
 
 # ---------- skip ----------
 def skip_job(req: Request, db: Session, job_id: uuid.UUID) -> dict:
