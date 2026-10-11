@@ -61,7 +61,7 @@ export function AiJobs() {
         <Reveal>
           <span className="inline-flex items-center gap-2 rounded-full border bg-background/60 px-3 py-1 text-xs font-medium backdrop-blur">
             <Sparkles className="size-3.5 text-indigo-500" />
-            New: Find jobs
+            Find jobs
           </span>
           <h2 className="mt-4 font-heading text-4xl font-bold tracking-tight">
             Don't have emails yet?{' '}
