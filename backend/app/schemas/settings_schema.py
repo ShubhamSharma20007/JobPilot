@@ -1,4 +1,5 @@
 from datetime import time
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 from pydantic.alias_generators import to_camel
@@ -35,6 +36,10 @@ class SettingsPayload(BaseModel):
     # Notifications
     notify_on_failure: bool = True
     notify_daily_summary: bool = False
+
+    # Auto follow-up
+    followup_enabled: bool = False
+    followup_days: Literal[3, 5, 7] = 5
 
     @field_validator("subject")
     @classmethod

@@ -1,0 +1,36 @@
+1. Application tracker (sabse zaroori)
+Abhi sent ke baad kuch nahi hota. Ek Kanban ya status add karo: Applied → Replied → Interview → Offer → Rejected. Jo user ko reply aata hai, usse tum Gmail se detect kar sakte ho, kyunki bounce check ka thread logic pehle se hai. Users ke liye ye “sirf mail bhejna” se kahin zyada value hai.
+
+2. Auto follow-up
+Agar 5-7 din tak reply na aaye, to ek chhota follow-up queue ho jaye. Daily limit aur send window wahi purane use honge. Cold email mein follow-up se reply rate sabse zyada badhta hai.
+
+3. Preview/edit before send
+AI email queue karne se pehle user ko draft dikhao, wo edit kar sake. Isse “AI apply” wala confusion bhi khatam hoga, aur button ka naam “Queue email” ho sakta hai.
+
+4. Template option: template + ek AI line
+Jo pehle poocha tha. User ka apna template rahe aur sirf ek opening line job ke hisaab se AI likhe. Ye sabse safe hai, aur spammy lagne ka risk kam hota hai.
+
+5. Resume tailoring
+Job description ke hisaab se AI batata hai ki resume mein kaunse keywords missing hain. Sirf suggestions do. Resume khud rewrite mat karo, warna galat claims ka risk hai.
+
+6. Match explanation
+Card par dikhao “Why 82%”: kaun se skills match hue aur kaun se missing hain. Ye keyword matching se hi ho jayega, AI call nahi lagega.
+
+7. Saved searches aur job alerts
+User filters save kare, aur naya matching job aaye to email ya notification mile. Daily summary mail ka infra pehle se hai.
+
+8. Recruiter dedupe warning
+Agar user ne pichle 30 din mein usi company ya recruiter ko mail bheja ho, to warning dikhao: “Already applied”. Isse duplicate apply rukega.
+
+9. Analytics page
+Sent, replied, bounce rate, aur kaun sa template better chal raha hai. Data tumhare paas pehle se DB mein hai, bas chart banana hai.
+
+10. Chrome extension se job save karna
+Tumhare folder mein ExtensionSection hai, to extension ka plan lagta hai. LinkedIn ya Naukri par job dekhte hue “Save to JobPilot” button se job queue mein aa jaye.
+
+Meri recommendation (agle 2 hafte ke liye): 3 → 4 → 1 → 2. Pehle email quality theek karo (preview, template + AI line), phir tracker aur follow-up. Wahi cheezein users ko wapas laati hain.
+
+Do cheezein jo feature se pehle karni chahiye:
+
+Tumhare dump mein backend/app/secrets/*.json hai (Google credentials). Wo chhup jaana chahiye. Unhe git se hatao aur keys rotate karo.
+Jo email bug abhi pending hai (AI text save hota hai par template jaata hai), wo pehle fix karna better hai. Warna naye features usi par bante jayenge.

@@ -13,6 +13,9 @@ export interface AppSettings {
   // Notifications
   notifyOnFailure: boolean;
   notifyDailySummary: boolean;
+  // Auto follow-up
+  followupEnabled: boolean;
+  followupDays: 3 | 5 | 7;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -34,4 +37,6 @@ Thanks for your time,
 {{name}}`,
   notifyOnFailure: true,
   notifyDailySummary: false,
+  followupEnabled: false,
+  followupDays: 5,
 };

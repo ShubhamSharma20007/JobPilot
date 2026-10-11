@@ -1,3 +1,4 @@
+import os
 import random
 import re
 import time
@@ -20,6 +21,7 @@ from utils.gmail_client import GmailAuthError, GmailSendError, send_message
 from utils.check_bounces import check_bounces
 from utils.cache import invalidate_profile
 from utils.job_sources import refresh_jobs
+from utils.followups import queue_followups, message_meta
 from models.job_model import Job
 from database.db import SessionLocal
 from sqlalchemy import func
@@ -95,7 +97,7 @@ def _claim(db, user_id, limit: int, exclude: set) -> list[tuple]:
         .with_for_update(skip_locked=True)
         .all()
     )
-    claimed = [(r.id, r.email, r.custom_subject, r.custom_body) for r in rows]
+    claimed = [(r.id, r.email, r.custom_subject, r.custom_body, r.reply_to_gmail_id) for r in rows]
     for r in rows:
         r.status = "sending"
         r.attempts += 1
@@ -218,12 +220,12 @@ def sync_user(user_id) -> None:
                     return
             data, filename = resume
 
-            for i, (row_id, email, custom_subject, custom_body) in enumerate(batch):
+            for i, (row_id, email, custom_subject, custom_body, reply_to) in enumerate(batch):
                 done.add(row_id)
                 rest = [b[0] for b in batch[i:]]
 
                 # Repeat cool-down
-                last = _recently_sent(db, user_id, email, prefs.cooldown_days)
+                last = None if reply_to else _recently_sent(db, user_id, email, prefs.cooldown_days)  # follow-ups skip the cool-down
                 if last:
                     days = max(1, (datetime.now(timezone.utc) - last).days)
                     _mark(db, row_id, status="skipped",
@@ -270,10 +272,19 @@ def sync_user(user_id) -> None:
                 msg["To"] = email
                 msg["Subject"] = subject.replace("\r", " ").replace("\n", " ")
                 msg.set_content(body)
-                msg.add_attachment(data, maintype="application", subtype="pdf", filename=filename)
+                if not reply_to:  # a follow-up is a short reply, the resume went with the first email
+                    msg.add_attachment(data, maintype="application", subtype="pdf", filename=filename)
 
                 try:
-                    message_id = send_message(db, token, msg)
+                    thread_id = None
+                    if reply_to:  # send inside the original Gmail conversation
+                        meta = message_meta(db, token, reply_to)
+                        if meta and meta["thread_id"]:
+                            thread_id = meta["thread_id"]
+                            if meta["message_id"]:
+                                msg["In-Reply-To"] = meta["message_id"]
+                                msg["References"] = meta["message_id"]
+                    message_id = send_message(db, token, msg, thread_id=thread_id)
                 except GmailAuthError:
                     _release(db, rest)
                     db.delete(token)  # UI shows "Connect Gmail" again
@@ -404,14 +415,20 @@ def _jobs_are_fresh(hours: int = 24) -> bool:
 first_run = None if _jobs_are_fresh(24) else datetime.now(timezone.utc)
 
 def start_scheduler() -> None:
+    if not (os.getenv("RENDER") or os.getenv("RUN_SCHEDULER") == "1"):
+        print("scheduler: OFF in this process (set RUN_SCHEDULER=1 to enable)")
+        return
+    print("scheduler: ON")
     recover_interrupted()
     scheduler.add_job(tick, "interval", minutes=2, id="tick", max_instances=1, coalesce=True)
     scheduler.add_job(send_summaries, "interval", minutes=30, id="summaries", max_instances=1, coalesce=True)
     scheduler.add_job(check_bounces, "interval", minutes=30, id="bounces", max_instances=1, coalesce=True)
+    scheduler.add_job(queue_followups, "interval", minutes=60, id="followups", max_instances=1, coalesce=True)
     # job pool for the /jobs page: once at startup, then every 6 hours, shared by all users
+    
     scheduler.add_job(
-        refresh_jobs, "interval", days=1, id="jobs",
-        max_instances=1, coalesce=True,
-        next_run_time=datetime.now(timezone.utc),
-    )
+            refresh_jobs, "interval", days=1, id="jobs",
+            max_instances=1, coalesce=True,
+            next_run_time=datetime.now(timezone.utc),   
+        )
     scheduler.start()

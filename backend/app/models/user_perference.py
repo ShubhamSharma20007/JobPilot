@@ -46,3 +46,7 @@ class UserPreference(Base):
     last_sync_at = Column(DateTime(timezone=True), nullable=True)
     timezone = Column(String(64), nullable=False, default="UTC")
     last_summary_on = Column(Date, nullable=True)
+
+    # Auto follow-up
+    followup_enabled = Column(Boolean, nullable=False, default=False)
+    followup_days = Column(Integer, nullable=False, default=5)

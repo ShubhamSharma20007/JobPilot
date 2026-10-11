@@ -38,7 +38,7 @@ def list_rows(req: Request, db: Session) -> dict:
     user_id = get_user_id(req)
     rows = (
         db.query(RecruiterEmail)
-        .filter(RecruiterEmail.user_id == user_id)
+        .filter(RecruiterEmail.user_id == user_id, RecruiterEmail.reply_to_gmail_id.is_(None))  # follow-ups are sent in the background
         .order_by(RecruiterEmail.position, RecruiterEmail.created_at)
         .all()
     )
