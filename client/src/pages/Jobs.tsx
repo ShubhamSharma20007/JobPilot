@@ -476,7 +476,7 @@ export default function Jobs() {
     const [sheetOpen, setSheetOpen] = useState(false);
     const [page, setPage] = useState(0);
     const [busyId, setBusyId] = useState<string | null>(null);
-    const [category, setCategory] = useState<string | null>(null);
+    const [_, setCategory] = useState<string | null>(null);
     const [analyseError, setAnalyseError] = useState<string | null>(null);
     const tried = useRef(false);
 
