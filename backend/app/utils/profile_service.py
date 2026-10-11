@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 from fastapi import BackgroundTasks
-
+from utils.categories import CATEGORIES
 from database.db import SessionLocal
 from models.file_model import File as FileModel
 from models.user_profile_model import UserProfile
@@ -23,29 +23,37 @@ def default_file(db, user_id):
 
 
 def kick_parse(db, user_id, background: BackgroundTasks) -> None:
-    """Start parsing the default resume in the background if it hasn't been parsed yet."""
+    """Parse the default resume in the background if it hasn't been parsed yet.
+    A new default resume wipes the old position, so the position always follows the current resume."""
     f = default_file(db, user_id)
-    if not f:
-        return
     prof = db.get(UserProfile, user_id)
+
+    if not f:  # last resume deleted: clear everything
+        if prof and (prof.parsed or prof.parsed_file_id or prof.manual_position):
+            prof.parsed = None
+            prof.parsed_file_id = None
+            prof.manual_position = None
+            prof.parse_status = "none"
+            db.commit()
+        return
+
     if prof and prof.parsed_file_id == f.id:
         if prof.parse_status != "parsing":
             return                                   # already done (or failed once: no loop)
         if prof.updated_at and prof.updated_at > datetime.now(timezone.utc) - STALE:
             return                                   # a parse is running right now
-        # a parse that never finished (server restart, crash): stop here instead of looping forever.
-        # The page then asks for a position, and "re-read resume" can try again.
-        prof.parse_status = "failed"
+        prof.parse_status = "failed"                 # parse never finished (restart/crash)
         db.commit()
         return
+
     if prof is None:
         prof = UserProfile(user_id=user_id)
         db.add(prof)
     prof.parsed_file_id, prof.parse_status = f.id, "parsing"
+    prof.parsed = None            # old resume's data must not leak into the new one
+    prof.manual_position = None   # a typed role only belongs to the resume it was typed for
     db.commit()
     background.add_task(run_parse, user_id, f.id)
-
-
 def _mark_failed(user_id, file_id) -> None:
     """Always leave a terminal state, so the page never spins on "Reading your resume" forever."""
     db = SessionLocal()
@@ -102,16 +110,18 @@ def profile_out(db, user_id) -> dict:
     eff = effective_profile(prof)
     parsed = (prof.parsed or {}) if prof else {}
     titles = parsed.get("titles") or []
+    domain = eff["domain"] if eff else None
     return {
         "position": eff["position"] if eff else None,
         "source": eff["source"] if eff else None,
+        "exact": bool(eff and eff.get("exact")),
+        "field": CATEGORIES[domain][0] if domain in CATEGORIES else None,
         "manualPosition": prof.manual_position if prof else None,
         "resumePosition": titles[0] if titles else (parsed.get("headline") or None),
-        "domain": eff["domain"] if eff else None,
+        "domain": domain,
         "status": prof.parse_status if prof else "none",
         "hasResume": default_file(db, user_id) is not None,
     }
-
 
 def set_position(db, user_id, position: str | None) -> None:
     prof = db.get(UserProfile, user_id)

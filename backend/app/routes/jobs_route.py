@@ -1,5 +1,5 @@
 import uuid
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -47,12 +47,13 @@ def profile_get(request: Request, background: BackgroundTasks, db: Session = Dep
 @router.put("/profile/position", status_code=status.HTTP_200_OK)
 def profile_position(body: PositionBody, request: Request, background: BackgroundTasks, db: Session = Depends(get_db)):
     uid = get_user_id(request)
+    if effective_profile(db.get(UserProfile, uid)):
+        raise HTTPException(400, "Your position comes from your resume. Upload a different resume to change it.")
     set_position(db, uid, body.position)
     eff = effective_profile(db.get(UserProfile, uid))
     if eff:
         background.add_task(fetch_for_titles, eff["titles"], False, eff["domain"])
     return profile_out(db, uid)
-
 
 @router.post("/profile/reparse", dependencies=[Depends(rate_limit("reparse", 5, 3600))], status_code=status.HTTP_200_OK)
 def profile_reparse(request: Request, background: BackgroundTasks, db: Session = Depends(get_db)):

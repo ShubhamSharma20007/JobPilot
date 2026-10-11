@@ -1,5 +1,8 @@
 """Turns the user's default resume PDF into a small structured profile, using the AI fallback chain."""
 import io
+import re
+
+
 
 from pypdf import PdfReader
 from utils.categories import CATEGORY_KEYS, classify
@@ -7,6 +10,13 @@ from utils.llm import LLMError
 from utils.llm_router import complete_json_with_fallback, has_provider
 
 MAX_CHARS = 12_000
+
+
+ROLE_RE = re.compile(
+    r"\b(developer|engineer|designer|analyst|manager|accountant|nurse|teacher|executive|"
+    r"consultant|specialist|architect|administrator|recruiter|officer|associate|intern)\b",
+    re.I,
+)
 
 SYSTEM = (
     "You extract facts from resumes of people in ANY profession. Use only what the resume says. "
@@ -27,6 +37,23 @@ PROMPT = """Read this resume and return JSON with exactly these keys:
 RESUME:
 {text}"""
 
+
+def guess_title(text: str) -> str | None:
+    for line in text.splitlines()[:12]:
+        line = line.strip()
+        if 3 <= len(line) <= 60 and ROLE_RE.search(line) and "@" not in line and not any(c.isdigit() for c in line):
+            return line
+    return None
+
+
+def heuristic_profile(text: str) -> dict:
+    """No-LLM fallback: guess the field and, if possible, the title from the top of the resume."""
+    title = guess_title(text)
+    return {
+        "name": None, "headline": title or "", "domain": classify(text[:400], text[:3000]),
+        "titles": [title] if title else [], "skills": [], "years_experience": None,
+        "location": None, "summary": "", "highlights": [],
+    }
 
 def extract_text(pdf_bytes: bytes) -> str:
     try:
