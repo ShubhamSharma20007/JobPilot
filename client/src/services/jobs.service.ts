@@ -19,15 +19,26 @@ export interface JobsResponse {
   jobs: Job[];
   total: number;
   pageSize: number;
-  stage: 'no_resume' | 'no_ai' | 'needs_profile' | 'ready';
-  aiReady: boolean;
-  profileReady: boolean;
+  stage: 'parsing' | 'needs_position' | 'ready';
   appliedToday: number;
   aiDailyLimit: number;
   domain: string | null;
-  category: string | null; // the category the server actually applied
+  category: string | null;
   categories: { value: string; label: string }[];
-  profile: { headline: string; titles: string[] } | null;
+  profile: { headline: string; titles: string[]; source: 'resume' | 'manual' } | null;
+}
+
+
+export interface ProfileInfo {
+  position: string | null;
+  field: string | null;   // new
+  exact: boolean;         // new
+  source: 'resume' | 'manual' | null;
+  manualPosition: string | null;
+  resumePosition: string | null;
+  domain: string | null;
+  status: 'none' | 'parsing' | 'ready' | 'failed';
+  hasResume: boolean;
 }
 
 export interface AiProfile {
@@ -102,30 +113,14 @@ class JobsService {
     ).data;
   }
 
-  async getAi() {
-    return (await instance.get<AiSettings>('/jobs/ai/settings')).data;
+  async getProfile() {
+    return (await instance.get<ProfileInfo>('/jobs/profile')).data;
   }
-  async saveAi(input: {
-    provider: string;
-    model: string;
-    dailyLimit: number;
-    apiKey?: string;
-  }) {
-    return (await instance.put<AiSettings>('/jobs/ai/settings', input)).data;
+  async setPosition(position: string | null) {
+    return (await instance.put<ProfileInfo>('/jobs/profile/position', { position })).data;
   }
-  async models(provider: string) {
-    return (
-      await instance.get<ModelList>('/jobs/ai/models', { params: { provider } })
-    ).data;
-  }
-  async removeKey() {
-    return (await instance.delete<AiSettings>('/jobs/ai/key')).data;
-  }
-  async testKey() {
-    return (await instance.post<{ ok: boolean }>('/jobs/ai/test')).data;
-  }
-  async analyseResume() {
-    return (await instance.post<AiSettings>('/jobs/ai/profile')).data;
+  async reparse() {
+    return (await instance.post<ProfileInfo>('/jobs/profile/reparse')).data;
   }
 }
 

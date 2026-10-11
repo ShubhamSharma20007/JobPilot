@@ -1,10 +1,10 @@
-"""Turns the user's default resume PDF into a small structured profile with their own AI key."""
+"""Turns the user's default resume PDF into a small structured profile, using the AI fallback chain."""
 import io
 
 from pypdf import PdfReader
-
 from utils.categories import CATEGORY_KEYS, classify
-from utils.llm import LLMError, complete_json
+from utils.llm import LLMError
+from utils.llm_router import complete_json_with_fallback, has_provider
 
 MAX_CHARS = 12_000
 
@@ -40,9 +40,9 @@ def extract_text(pdf_bytes: bytes) -> str:
     return text[:MAX_CHARS]
 
 
-def parse_resume(pdf_bytes: bytes, provider: str, key: str, model: str) -> dict:
-    prompt = PROMPT.format(text=extract_text(pdf_bytes), domains=", ".join(CATEGORY_KEYS))
-    data = complete_json(provider, key, model, SYSTEM, prompt)
+def parse_resume(text: str, user_id=None) -> dict:
+    prompt = PROMPT.format(text=text, domains=", ".join(CATEGORY_KEYS))
+    data = complete_json_with_fallback(SYSTEM, prompt, purpose="resume_parse", user_id=user_id)
 
     def strs(v, n):
         return [str(x).strip()[:80] for x in (v if isinstance(v, list) else []) if str(x).strip()][:n]
@@ -66,3 +66,22 @@ def parse_resume(pdf_bytes: bytes, provider: str, key: str, model: str) -> dict:
         "summary": str(data.get("summary") or "")[:500],
         "highlights": strs(data.get("highlights"), 4),
     }
+
+
+def heuristic_profile(text: str) -> dict:
+    """No-LLM fallback: guess the field from the top of the resume (where the role usually is)."""
+    return {
+        "name": None, "headline": "", "domain": classify(text[:400], text[:3000]),
+        "titles": [], "skills": [], "years_experience": None, "location": None,
+        "summary": "", "highlights": [],
+    }
+
+
+def parse_resume_server(pdf_bytes: bytes, user_id=None) -> dict:
+    text = extract_text(pdf_bytes)          # raises LLMError for scanned PDFs
+    if has_provider():
+        try:
+            return parse_resume(text, user_id)
+        except Exception as e:              # every provider failed, or the reply was unusable: still give a profile
+            print("parse_resume_server: AI parse failed, using fallback:", repr(e))
+    return heuristic_profile(text)

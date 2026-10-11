@@ -98,10 +98,6 @@ export const FAQ = [
     a: 'Permission to send email and to use the sheet it creates. Your Google tokens are stored encrypted. You can revoke access and delete your data at any time.',
   },
   {
-    q: 'How do I find recruiter emails?',
-    a: 'For now you add them yourself and JobPilot handles everything after that. Automatic discovery of openings and contacts is planned next, with a review step so you approve each one.',
-  },
-  {
     q: 'Can I use more than one resume?',
     a: 'Yes. Upload PDFs up to 5 MB each and choose a default, for example one for full stack roles and one for AI roles.',
   },

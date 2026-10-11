@@ -12,7 +12,6 @@ import { FollowUpSettings } from '@/components/settings/FollowUpSetting';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
 import { DangerZone } from '@/components/settings/DangerZone';
 import { GmailSettings } from '@/components/settings/GmailSettings';
-import { AiSettings } from '@/components/settings/AiSettings';
 import { gradientBtn } from '@/components/settings/primitives';
 import Loader from '@/components/Loader';
 
@@ -130,7 +129,6 @@ export default function Settings() {
           name={user.name ?? user.email}
         />
         <FollowUpSettings value={draft} onChange={patch} />
-        <AiSettings />
         <NotificationSettings value={draft} onChange={patch} />
         <DangerZone />
 

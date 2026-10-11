@@ -21,6 +21,9 @@ from models.job_model import Job
 from models.user_ai_model import UserAI
 from utils.cache import cache_get, cache_set
 from utils.categories import classify
+from models.user_profile_model import UserProfile
+from utils.profile_logic import effective_profile
+from models.user_ai_model import UserAI
 
 HEADERS = {"User-Agent": "JobPilot/1.0 (job aggregator)"}
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
@@ -324,3 +327,12 @@ def refresh_jobs() -> None:
     # outside the session above, because fetch_for_titles opens its own
     for title, domain in titles:
         fetch_for_titles([title], force=True, domain=domain)
+
+
+def _demand_titles(db, limit: int = 12) -> list[tuple[str, str | None]]:
+    counts: Counter = Counter()
+    for prof in db.query(UserProfile).all():
+        eff = effective_profile(prof)
+        if eff:
+            counts[(eff["titles"][0].lower().strip(), eff["domain"])] += 1
+    return [pair for pair, _ in counts.most_common(limit)]

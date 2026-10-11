@@ -2,41 +2,28 @@ import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-
-from cryptography.fernet import InvalidToken
 from fastapi import HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-
+from config.config import config
 from controllers.gmail_controller import _default_resume
 from models.file_model import File as FileModel
 from models.job_model import Job, UserJob
 from models.oauth_token_model import OAuthToken
 from models.recruiter_email_model import RecruiterEmail
-from models.user_ai_model import UserAI
 from models.user_model import User
-from utils.crypto import decrypt, encrypt
-from utils.llm import PROVIDERS, LLMAuthError, LLMError, complete, complete_json, list_models
+from utils.llm import  LLMAuthError, LLMError, complete_json
 from utils.preferences import ensure_preferences, kick_sync
 from utils.request_user import get_user_id
-from utils.resume_parser import parse_resume
 from utils.user_payload import GMAIL_SEND_SCOPE
 from utils.categories import CATEGORY_KEYS, CATEGORY_OPTIONS, classify
-
-
+from utils.profile_logic import effective_profile
+from models.user_profile_model import UserProfile
 MAX_AI_DAILY = 50
 PAGE_SIZE = 60
-
-
-# ---------- schemas ----------
-class AISettingsBody(BaseModel):
-    provider: str
-    model: str = Field(min_length=1, max_length=80)
-    api_key: str | None = Field(None, max_length=500, alias="apiKey")  # omit to keep the saved key
-    daily_limit: int = Field(10, ge=1, le=MAX_AI_DAILY, alias="dailyLimit")
-    model_config = {"populate_by_name": True}
+AI_DAILY_LIMIT = config["AI_DAILY_LIMIT"]
 
 
 # ---------- helpers ----------
@@ -47,17 +34,6 @@ def _user(req: Request, db: Session) -> User:
     return user
 
 
-def _ai_row(db: Session, user_id) -> UserAI | None:
-    return db.get(UserAI, user_id)
-
-
-def _key(row: UserAI | None) -> str:
-    if not row or not row.key_enc:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Add your AI key in Settings first.")
-    try:
-        return decrypt(row.key_enc)
-    except (InvalidToken, RuntimeError, ValueError):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Your saved AI key can't be read. Please save it again.")
 
 
 def _llm_http(e: LLMError) -> HTTPException:
@@ -75,9 +51,6 @@ def _default_file_id(db: Session, user_id):
     return f[0] if f else None
 
 
-def _profile_ready(db: Session, user_id, row: UserAI | None) -> bool:
-    return bool(row and row.profile and row.profile_file_id and row.profile_file_id == _default_file_id(db, user_id))
-
 
 def _applied_today(db: Session, user_id, tz_name: str) -> int:
     try:
@@ -92,100 +65,8 @@ def _applied_today(db: Session, user_id, tz_name: str) -> int:
     )
 
 
-# ---------- AI settings ----------
-def _ai_out(db: Session, user_id) -> dict:
-    row = _ai_row(db, user_id)
-    return {
-        "providers": [{"value": k, "label": v["label"], "defaultModel": v["default_model"]} for k, v in PROVIDERS.items()],
-        "provider": row.provider if row else "gemini",
-        "model": row.model if row else PROVIDERS["gemini"]["default_model"],
-        "keySaved": bool(row and row.key_enc),
-        "keyHint": row.key_hint if row else None,
-        "dailyLimit": row.daily_limit if row else 10,
-        "profile": row.profile if _profile_ready(db, user_id, row) else None,
-    }
 
 
-def get_ai_settings(req: Request, db: Session) -> dict:
-    return _ai_out(db, get_user_id(req))
-
-
-def save_ai_settings(req: Request, db: Session, body: AISettingsBody) -> dict:
-    user_id = get_user_id(req)
-    if body.provider not in PROVIDERS:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unknown AI provider")
-    row = _ai_row(db, user_id)
-    new_key = (body.api_key or "").strip()
-    if not new_key and not (row and row.key_enc):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Paste your API key to continue.")
-
-    try:
-        if row is None:
-            row = UserAI(user_id=user_id)
-            db.add(row)
-        row.provider, row.model, row.daily_limit = body.provider, body.model.strip(), body.daily_limit
-        if new_key:
-            row.key_enc = encrypt(new_key)
-            row.key_hint = new_key[-4:]
-        db.commit()
-    except (RuntimeError, ValueError):
-        db.rollback()
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "The server isn't set up to store keys.")
-    except SQLAlchemyError as e:
-        db.rollback()
-        print("DB error:", e)
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Database error")
-    return _ai_out(db, user_id)
-
-
-def get_models(req: Request, db: Session, provider: str) -> dict:
-    """Models for the dropdown. Live from the provider when this provider's key is saved, else a built-in list."""
-    if provider not in PROVIDERS:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unknown AI provider")
-    row = _ai_row(db, get_user_id(req))
-    key = None
-    if row and row.key_enc and row.provider == provider:
-        try:
-            key = decrypt(row.key_enc)
-        except (InvalidToken, RuntimeError, ValueError):
-            key = None
-    return list_models(provider, key)
-
-
-def delete_ai_key(req: Request, db: Session) -> dict:
-    user_id = get_user_id(req)
-    row = _ai_row(db, user_id)
-    if row:
-        row.key_enc, row.key_hint = None, None
-        db.commit()
-    return _ai_out(db, user_id)
-
-
-def test_ai_key(req: Request, db: Session) -> dict:
-    row = _ai_row(db, get_user_id(req))
-    key = _key(row)
-    try:
-        complete(row.provider, key, row.model, "You are a connection test.", "Reply with the single word OK.")
-    except LLMError as e:
-        raise _llm_http(e)
-    return {"ok": True}
-
-
-def refresh_profile(req: Request, db: Session) -> dict:
-    """Read the user's default resume and store the parsed profile."""
-    user = _user(req, db)
-    row = _ai_row(db, user.id)
-    key = _key(row)
-    resume = _default_resume(db, user)
-    if not resume:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Upload a resume on your Profile page first.")
-    try:
-        row.profile = parse_resume(resume[0], row.provider, key, row.model)
-    except LLMError as e:
-        raise _llm_http(e)
-    row.profile_file_id = _default_file_id(db, user.id)
-    db.commit()
-    return _ai_out(db, user.id)
 
 
 # ---------- listing ----------
@@ -221,15 +102,6 @@ def _job_out(j: Job, uj: UserJob | None, score) -> dict:
     }
 
 
-def _stage(db: Session, user_id, row: UserAI | None) -> str:
-    if not _default_file_id(db, user_id):
-        return "no_resume"
-    if not (row and row.key_enc):
-        return "no_ai"
-    if not _profile_ready(db, user_id, row):
-        return "needs_profile"   # resume is new or the default resume changed
-    return "ready"
-
 
 def list_jobs(
     req: Request, db: Session, q: str | None, only_email: bool, page: int,
@@ -237,26 +109,28 @@ def list_jobs(
     category: str | None = None,
 ) -> dict:
     user_id = get_user_id(req)
-    row = _ai_row(db, user_id)
-    stage = _stage(db, user_id, row)
+    prof = db.get(UserProfile, user_id)
+    eff = effective_profile(prof)
     prefs = ensure_preferences(db, user_id)
 
-    out = {
-            "jobs": [], "total": 0, "pageSize": PAGE_SIZE,
-            "stage": stage,
-            "aiReady": bool(row and row.key_enc),
-            "profileReady": stage == "ready",
-            "appliedToday": _applied_today(db, user_id, prefs.timezone),
-            "aiDailyLimit": row.daily_limit if row else 10,
-            "domain": None, "category": None, "categories": CATEGORY_OPTIONS,
-            "profile": None,
-        }
-    if stage != "ready":
-        return out    # no resume or no parsed profile = no jobs
+    if eff:
+        stage = "ready"
+    elif prof and prof.parse_status == "parsing":
+        stage = "parsing"
+    else:
+        stage = "needs_position"  
 
-    profile = row.profile
-    # older profiles have no "domain", so work it out instead of forcing a re-parse
-    domain = profile.get("domain")
+    out = {
+        "jobs": [], "total": 0, "pageSize": PAGE_SIZE, "stage": stage,
+        "appliedToday": _applied_today(db, user_id, prefs.timezone),
+        "aiDailyLimit": AI_DAILY_LIMIT,
+        "domain": None, "category": None, "categories": CATEGORY_OPTIONS, "profile": None,
+    }
+    if stage != "ready":
+        return out
+    profile = eff
+    domain = eff["domain"]
+    
     if domain not in CATEGORY_KEYS:
         domain = classify(" ".join(profile.get("titles") or []), " ".join(profile.get("skills") or []))
 
@@ -301,10 +175,7 @@ def list_jobs(
         "total": len(items),
         "domain": domain,
         "category": effective,
-        "profile": {
-            "headline": profile.get("headline") or "",
-            "titles": (profile.get("titles") or [])[:3],
-        },
+        "profile": {"headline": eff["position"], "titles": eff["titles"][:3], "source": eff["source"]},
     })
     return out
 
@@ -330,13 +201,14 @@ EMAIL_SYSTEM = (
 )
 
 
-def _write_email(row: UserAI, key: str, profile: dict, sender: str, job: Job) -> tuple[str, str]:
+def _write_email(provider: str, key: str, model: str, profile: dict, sender: str, job: Job):
     prompt = (
         f"CANDIDATE NAME: {sender}\nPROFILE: {profile}\n\n"
         f"JOB TITLE: {job.title}\nCOMPANY: {job.company}\nLOCATION: {job.location or 'not stated'}\n"
         f"JOB DESCRIPTION:\n{(job.description or '')[:3000]}"
     )
-    data = complete_json(row.provider, key, row.model, EMAIL_SYSTEM, prompt)
+
+    data = complete_json(provider, key, model, EMAIL_SYSTEM, prompt)
     subject = re.sub(r"\s+", " ", str(data.get("subject") or "")).strip()[:200]
     body = str(data.get("body") or "").strip()[:6000]
     if not subject or len(body) < 60:
@@ -353,28 +225,44 @@ def apply_job(req: Request, db: Session, job_id: uuid.UUID) -> dict:
     if not job.contact_email:  # honest fallback: no email, so send them to the site
         return {"status": "no_contact", "applyUrl": job.url}
 
-    row = _ai_row(db, user.id)
-    key = _key(row)
+    ai_key = config.get("GEMINI_API_KEY")
+    if not ai_key:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "AI apply is not available right now.")
+
     token = db.get(OAuthToken, user.id)
     if not token or not token.refresh_token_enc or GMAIL_SEND_SCOPE not in (token.scopes or "").split():
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Connect your Gmail first.")
     if not _default_file_id(db, user.id):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Upload a resume on your Profile page first.")
 
+    eff = effective_profile(db.get(UserProfile, user.id))
+    if not eff:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Set your position on your Profile page first.")
+
+
     existing = db.get(UserJob, (user.id, job.id))
     if existing and existing.status == "queued":
         return {"status": "queued", "already": True}
 
     prefs = ensure_preferences(db, user.id)
-    if _applied_today(db, user.id, prefs.timezone) >= row.daily_limit:
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, f"You've reached your AI limit of {row.daily_limit} applications today.")
+    if _applied_today(db, user.id, prefs.timezone) >= AI_DAILY_LIMIT:
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            f"You've reached the limit of {AI_DAILY_LIMIT} AI applications today.",
+        )
+    # if _applied_today(db, user.id, prefs.timezone) >= row.daily_limit:
+    #     raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, f"You've reached your AI limit of {row.daily_limit} applications today.")
 
-    if not _profile_ready(db, user.id, row):
-        refresh_profile(req, db)
-        db.refresh(row)
+#  Limit check
+    if _applied_today(db, user.id, prefs.timezone) >= AI_DAILY_LIMIT:
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
+                            f"You've reached the limit of {AI_DAILY_LIMIT} AI applications today.")
+
+    # if not _profile_ready(db, user.id, row):
+    #     db.refresh(row)
 
     try:
-        subject, body = _write_email(row, key, row.profile, user.name or user.email, job)
+         subject, body = _write_email("gemini", ai_key, config["AI_MODEL"], eff, user.name or user.email, job)
     except LLMError as e:
         print('LLM ERROR: ',e)
         raise _llm_http(e)

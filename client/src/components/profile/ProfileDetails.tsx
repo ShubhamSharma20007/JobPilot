@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/landing/UserAvatar';
 import { gradientBtn } from '@/components/settings/primitives';
+import { PositionField } from './PositionField';
 import type { User } from '@/types/user.type';
 
 const inputBase =
@@ -70,7 +71,14 @@ function formatDate(iso?: string) {
       });
 }
 
-export function ProfileDetails({ user }: { user: User }) {
+export function ProfileDetails({
+  user,
+  resumeKey,
+}: {
+  user: User;
+  /** id of the default resume, so the position field re-reads when it changes */
+  resumeKey?: string;
+}) {
   const label = user.name ?? user.email;
   const initials = label.slice(0, 2).toUpperCase();
   const [name, setName] = useState(user.name ?? '');
@@ -80,7 +88,6 @@ export function ProfileDetails({ user }: { user: User }) {
     <div className="overflow-hidden rounded-2xl border bg-card shadow-lg shadow-indigo-500/5">
       {/* Header */}
       <div className="flex flex-wrap items-center gap-4 border-b bg-linear-to-r from-indigo-500/[0.08] via-violet-500/[0.04] to-transparent p-6">
-        {/* Gradient ring around the avatar */}
         <span className="rounded-full ">
           <span className="block rounded-full bg-card p-0.5">
             <UserAvatar
@@ -139,6 +146,9 @@ export function ProfileDetails({ user }: { user: User }) {
         <Field label="Google account ID" icon={ShieldCheck}>
           <LockedInput value={user.google_id} />
         </Field>
+
+        {/* Full width row, inside the same card */}
+        <PositionField resumeKey={resumeKey} />
       </div>
 
       <div className="flex items-center justify-between gap-3 border-t bg-muted/30 px-6 py-4">

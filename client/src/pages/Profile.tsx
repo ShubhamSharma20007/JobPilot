@@ -4,13 +4,11 @@ import { useAuth } from '@/redux/hooks/useAuth';
 import { dispatchAuth } from '@/redux/hooks/dispatchAuth';
 import { useAppDispatch } from '@/redux/hook';
 import { markDefaultResume } from '@/redux/slices/authSlice';
-
-import { ProfileDetails } from '@/components/profile/ProfileDetails';
 import { ResumeDropzone } from '@/components/profile/ResumeDropzone';
 import { CurrentResume, ResumeList } from '@/components/profile/ResumeList';
 import { MAX_RESUMES } from '@/types/resume.type';
 import { useLocation } from 'react-router-dom';
-
+import { ProfileDetails } from '@/components/profile/ProfileDetails';
 function SectionHeading({ title, body }: { title: string; body: string }) {
   return (
     <div className="mb-4 flex items-stretch gap-3">
@@ -134,8 +132,8 @@ export default function Profile() {
           </p>
         </div>
 
-        <ProfileDetails user={user} />
-
+         <ProfileDetails user={user} resumeKey={current?.id} />
+         
         <div>
           <SectionHeading
             title="Current resume"

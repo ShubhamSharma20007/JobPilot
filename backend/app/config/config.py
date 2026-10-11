@@ -33,4 +33,7 @@ config = {
     "ADZUNA_APP_ID": getKey("ADZUNA_APP_ID"),
     "ADZUNA_APP_KEY": getKey("ADZUNA_APP_KEY"),
     "OPENWEBNINJA_API_KEY": getKey("OPENWEBNINJA_API_KEY"),
+    "GEMINI_API_KEY": getKey("GEMINI_API_KEY"),
+    "AI_MODEL": getKey("AI_MODEL") or "gemini-3.5-flash",
+    "AI_DAILY_LIMIT": int(getKey("AI_DAILY_LIMIT") or 10),
 }

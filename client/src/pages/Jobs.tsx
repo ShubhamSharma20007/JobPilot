@@ -5,8 +5,6 @@ import {
     Briefcase,
     CheckCircle2,
     ExternalLink,
-    FileText,
-    KeyRound,
     Loader2,
     MapPin,
     Search,
@@ -395,70 +393,70 @@ function JobCard({
 }
 
 
-function JobsGate({
-    stage,
-    error,
-    onRetry,
-}: {
-    stage: JobsResponse['stage'];
-    error: string | null;
-    onRetry: () => void;
-}) {
-    const cfg = {
-        no_resume: {
-            icon: FileText,
-            title: 'Upload your resume first',
-            body: 'JobPilot reads your resume to find your field and shows only jobs that fit it. Any profession works.',
-            to: '/profile#upload-resumes',
-            cta: 'Upload resume',
-        },
-        no_ai: {
-            icon: KeyRound,
-            title: 'Add your AI key to read your resume',
-            body: 'Your own key (Gemini has a free tier) is used once to understand your resume and later to write applications.',
-            to: '/settings',
-            cta: 'Open Settings',
-        },
-    } as const;
+function JobsGate({ stage, onSaved }: { stage: 'parsing' | 'needs_position'; onSaved: () => void }) {
+    const [value, setValue] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [waited, setWaited] = useState(false); // reading is taking long: let the user type a role instead
 
-    if (stage === 'needs_profile') {
+    useEffect(() => {
+        if (stage !== 'parsing') return;
+        const t = setTimeout(() => setWaited(true), 25_000);
+        return () => clearTimeout(t);
+    }, [stage]);
+
+    async function save() {
+        if (!value.trim()) return;
+        setSaving(true);
+        try {
+            await jobsService.setPosition(value.trim());
+            onSaved();
+        } catch (e) {
+            toast.error("Couldn't save position", { description: apiError(e, 'Please try again.') });
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    if (stage === 'parsing' && !waited) {
         return (
             <div className="mx-auto grid min-h-[60vh] max-w-md place-items-center px-4 text-center">
                 <div className="space-y-3">
-                    {error ? (
-                        <>
-                            <p className="font-medium">We couldn't read your resume.</p>
-                            <p className="text-sm text-muted-foreground">{error}</p>
-                            <Button variant="outline" onClick={onRetry}>
-                                Try again
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Loader2 className="mx-auto size-8 animate-spin text-indigo-500" />
-                            <p className="font-medium">Reading your resume…</p>
-                            <p className="text-sm text-muted-foreground">
-                                We're finding your field and fetching matching jobs.
-                            </p>
-                        </>
-                    )}
+                    <Loader2 className="mx-auto size-8 animate-spin text-indigo-500" />
+                    <p className="font-medium">Reading your resume…</p>
+                    <p className="text-sm text-muted-foreground">We're finding your position and matching jobs.</p>
                 </div>
             </div>
         );
     }
 
-    const c = cfg[stage as 'no_resume' | 'no_ai'];
     return (
         <div className="mx-auto grid min-h-[60vh] max-w-md place-items-center px-4 text-center">
-            <div className="space-y-3">
+            <div className="w-full space-y-3">
                 <span className="mx-auto grid size-12 place-items-center rounded-xl bg-linear-to-br from-indigo-500/15 to-violet-500/15 text-indigo-500">
-                    <c.icon className="size-6" />
+                    <Briefcase className="size-6" />
                 </span>
-                <p className="font-heading text-lg font-semibold">{c.title}</p>
-                <p className="text-sm text-muted-foreground">{c.body}</p>
-                <Link to={c.to} className={buttonVariants({ className: gradientBtn })}>
-                    {c.cta}
-                </Link>
+                <p className="font-heading text-lg font-semibold">What role are you looking for?</p>
+                <p className="text-sm text-muted-foreground">
+                    {stage === 'parsing'
+                        ? "We're still reading your resume. You don't have to wait: type your role now."
+                        : "Type a position, or upload a resume and we'll detect it. Any profession works."}
+                </p>
+                <input
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && save()}
+                    placeholder="e.g. Staff Nurse, Accountant, Sales Executive"
+                    className={inputClass}
+                    aria-label="Position"
+                />
+                <div className="flex flex-wrap justify-center gap-2">
+                    <Button className={gradientBtn} disabled={saving || !value.trim()} onClick={save}>
+                        {saving && <Loader2 className="animate-spin" />} Show jobs
+                    </Button>
+                    <Link to="/profile#upload-resumes" className={buttonVariants({ variant: 'outline' })}>
+                        Upload resume
+                    </Link>
+                </div>
             </div>
         </div>
     );
@@ -476,10 +474,6 @@ export default function Jobs() {
     const [sheetOpen, setSheetOpen] = useState(false);
     const [page, setPage] = useState(0);
     const [busyId, setBusyId] = useState<string | null>(null);
-    const [_, setCategory] = useState<string | null>(null);
-    const [analyseError, setAnalyseError] = useState<string | null>(null);
-    const tried = useRef(false);
-
 
     const load = useCallback(
         async (silent = false) => {
@@ -551,28 +545,14 @@ export default function Jobs() {
     };
 
 
-    const analyse = useCallback(async () => {
-        setAnalyseError(null);
-        try {
-            await jobsService.analyseResume();
-            await load(true);
-            // jobs for the new field are fetched in the background, so check again shortly
-            setTimeout(() => load(true), 8000);
-        } catch (e) {
-            setAnalyseError(apiError(e, 'Please try again.'));
-        }
-    }, [load]);
+    
 
     // New resume, or a different default resume: read it once, automatically.
     useEffect(() => {
-        if (data?.stage !== 'needs_profile') {
-            tried.current = false;
-            return;
-        }
-        if (tried.current) return;
-        tried.current = true;
-        analyse();
-    }, [data?.stage, analyse]);
+        if (data?.stage !== 'parsing') return;
+        const t = setInterval(() => load(true), 3000);
+        return () => clearInterval(t);
+    }, [data?.stage, load]);
 
 
     const activeCount =
@@ -599,7 +579,15 @@ export default function Jobs() {
     if (!data) return null;
 
     if (data.stage !== 'ready') {
-        return <JobsGate stage={data.stage} error={analyseError} onRetry={analyse} />;
+        return (
+            <JobsGate
+                stage={data.stage}
+                onSaved={() => {
+                    load();
+                    setTimeout(() => load(true), 8000); // jobs for the new position arrive in the background
+                }}
+            />
+        );
     }
     const pages = Math.max(1, Math.ceil(data.total / data.pageSize));
     const freshnessLabel = FRESHNESS.find(
@@ -688,7 +676,7 @@ export default function Jobs() {
                     </p>
                 </div>
 
-
+        <span className="ml-auto tabular-nums">{data.appliedToday} of {data.aiDailyLimit} AI applies today</span>
                 {data.profile && (
                     <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border bg-linear-to-r from-indigo-500/[0.07] via-transparent to-transparent p-4">
                         <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-linear-to-br from-indigo-500/15 to-violet-500/15 text-indigo-500 ring-1 ring-indigo-500/15">
@@ -696,7 +684,7 @@ export default function Jobs() {
                         </span>
                         <div className="min-w-0 flex-1">
                             <p className="text-xs font-medium text-muted-foreground">
-                                Position detected from your default resume
+                                {data.profile.source === 'manual' ? 'Position you set' : 'Position detected from your resume'}
                             </p>
                             <p className="truncate font-heading font-semibold">
                                 {data.profile.headline || data.profile.titles[0] || 'Your profile'}
@@ -704,11 +692,11 @@ export default function Jobs() {
                             <p className="text-xs text-muted-foreground">
                                 Showing{' '}
                                 {data.categories.find((c) => c.value === data.domain)?.label ?? 'all'} jobs.
-                                This stays the same until you change your default resume.
+                                Change it anytime from your Profile.
                             </p>
                         </div>
                         <Link
-                            to="/profile#upload-resumes"
+                            to="/profile#position"
                             className={buttonVariants({ variant: 'outline' })}
                         >
                             Change resume
@@ -716,32 +704,11 @@ export default function Jobs() {
                     </div>
                 )}
 
-                {!data.aiReady && (
+
+                {resumes.length === 0 && (
                     <div className={banner}>
-                        <p className="text-sm">
-                            Add your AI key in Settings to turn on AI apply and match scores.
-                            Browsing works without it.
-                        </p>
-                        <Link
-                            to="/settings"
-                            className={buttonVariants({ variant: 'outline' })}
-                        >
-                            Open Settings
-                        </Link>
-                    </div>
-                )}
-                {data.aiReady && resumes.length === 0 && (
-                    <div className={banner}>
-                        <p className="text-sm">
-                            Upload a resume so JobPilot can rank jobs for you and attach it to
-                            applications.
-                        </p>
-                        <Link
-                            to="/profile#upload-resumes"
-                            className={buttonVariants({ variant: 'outline' })}
-                        >
-                            Upload resume
-                        </Link>
+                        <p className="text-sm">Upload a resume to apply. You can browse jobs without one.</p>
+                        <Link to="/profile#upload-resumes" className={buttonVariants({ variant: 'outline' })}>Upload resume</Link>
                     </div>
                 )}
                 {user && !user.gmail_connected && (
@@ -794,7 +761,7 @@ export default function Jobs() {
                         )}
                     </Button>
                 </div>
-              
+
 
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     <span className="tabular-nums">
@@ -812,11 +779,7 @@ export default function Jobs() {
                             <X className="size-3" />
                         </button>
                     ))}
-                    {data.aiReady && (
-                        <span className="ml-auto tabular-nums">
-                            {data.appliedToday} of {data.aiDailyLimit} AI applies today
-                        </span>
-                    )}
+                    
                 </div>
 
                 {data.jobs.length === 0 ? (
@@ -834,7 +797,7 @@ export default function Jobs() {
                                     setFilters(DEFAULT_FILTERS);
                                     setOnlyEmail(false);
                                     setQ('');
-                                    setCategory(null);
+                   
                                     setPage(0);
                                 }}
                             >

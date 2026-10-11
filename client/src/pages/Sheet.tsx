@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { OptionMenu } from '@/components/ui/option-menu';
 import { Link } from 'react-router-dom';
 import Loader from '@/components/Loader';
-
+import { EXTENSION } from '@/components/landing/Content';
 const SYNC_OPTIONS = [
   { value: '5', label: '5 minutes' },
   { value: '10', label: '10 minutes' },
@@ -247,12 +247,13 @@ export default function Sheet() {
             <ConnectGmail />
           </div>
         )}
-        {view.every((r) => !r.recruiter.trim()) && (
-          <div className={banner}>
-            <p className="text-sm">
-              Finding emails while you browse? The Chrome extension adds them to
-              this sheet in one click.
-            </p>
+       
+         {!EXTENSION.comingSoon && view.every((r) => !r.recruiter.trim()) && (
+           <div className={banner}>
+             <p className="text-sm">
+               Finding emails while you browse? The Chrome extension adds them to
+               this sheet in one click.
+             </p>
             <Link
               to={{ pathname: '/', hash: '#extension' }}
               className={buttonVariants({ variant: 'outline' })}

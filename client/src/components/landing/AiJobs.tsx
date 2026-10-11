@@ -29,7 +29,7 @@ const POINTS = [
   {
     icon: Sparkles,
     title: 'Writes each email for you',
-    body: 'AI apply drafts a short, honest email from your resume facts only, using your own AI key.',
+    body: 'AI apply drafts a short, honest email from your resume facts only.',
   },
   {
     icon: Send,
@@ -117,8 +117,8 @@ export function AiJobs() {
               </a>
             )}
             <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-              <KeyRound className="size-4 text-indigo-500" />
-              Bring your own key: Gemini (free tier), OpenAI or Claude
+              <Sparkles className="size-4 text-indigo-500" />
+              No setup needed: we read your resume for you
             </span>
           </div>
         </Reveal>
