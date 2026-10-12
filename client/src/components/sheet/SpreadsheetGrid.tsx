@@ -6,9 +6,25 @@ import type { SheetRow } from '@/types/sheet.type';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const COLUMNS = [
-  { key: 'recruiter', label: 'Recruiter emails', hint: 'Type or paste here' },
-  { key: 'delivered', label: 'Delivered emails', hint: 'Filled automatically' },
-  { key: 'failed', label: 'Failed emails', hint: 'Filled automatically' },
+  {
+    key: 'recruiter',
+    label: 'Recruiter emails',
+    hint: 'Type or paste here',
+    // sticky on small screens so the email stays visible while scrolling sideways
+    th: 'min-w-[15rem] max-md:sticky max-md:left-12 max-md:z-20 max-md:bg-muted',
+  },
+  {
+    key: 'delivered',
+    label: 'Delivered emails',
+    hint: 'Filled automatically',
+    th: 'min-w-[11rem]',
+  },
+  {
+    key: 'failed',
+    label: 'Failed emails',
+    hint: 'Filled automatically',
+    th: 'min-w-[16rem]',
+  },
 ] as const;
 
 type CellStatus = 'empty' | 'ok' | 'invalid' | 'duplicate';
@@ -22,6 +38,19 @@ export const newRow = (): SheetRow => ({
 });
 export const makeRows = (n: number): SheetRow[] =>
   Array.from({ length: n }, () => newRow());
+
+// Bounce messages can arrive with HTML entities (e.g. We&#39;re), so decode them for display
+const ENTITIES: Record<string, string> = {
+  '&#39;': "'",
+  '&apos;': "'",
+  '&quot;': '"',
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&nbsp;': ' ',
+};
+const decode = (s: string) =>
+  s.replace(/&#39;|&apos;|&quot;|&amp;|&lt;|&gt;|&nbsp;/g, (m) => ENTITIES[m]);
 
 type Props = { rows: SheetRow[]; onChange: (rows: SheetRow[]) => void };
 
@@ -103,15 +132,22 @@ export function SpreadsheetGrid({ rows, onChange }: Props) {
           className="h-0.5 bg-linear-to-r from-indigo-500 to-violet-500"
         />
 
-        <div ref={gridRef} className="max-h-[60vh] overflow-auto">
-          <table className="w-full min-w-[640px] border-collapse text-sm">
-            <thead className="sticky top-0 z-10 bg-muted">
+        {/* Scrolls sideways on narrow screens; the row number and email columns stay pinned */}
+        <div
+          ref={gridRef}
+          className="max-h-[65dvh] overflow-auto overscroll-x-contain"
+        >
+          <table className="w-full min-w-[44rem] border-separate border-spacing-0 text-sm">
+            <thead className="sticky top-0 z-30 bg-muted">
               <tr>
-                <th className="w-12 border-b border-r" aria-label="Row" />
+                <th
+                  className="sticky left-0 z-20 w-12 min-w-12 border-r border-b bg-muted max-md:z-30"
+                  aria-label="Row"
+                />
                 {COLUMNS.map((c) => (
                   <th
                     key={c.key}
-                    className="border-b border-r px-3 py-2 text-left last:border-r-0"
+                    className={`border-b border-r bg-muted px-3 py-2 text-left whitespace-nowrap last:border-r-0 ${c.th}`}
                   >
                     <span className="block font-medium">{c.label}</span>
                     <span className="block text-xs font-normal text-muted-foreground">
@@ -125,9 +161,10 @@ export function SpreadsheetGrid({ rows, onChange }: Props) {
               {rows.map((row, i) => {
                 const status = statuses[i];
                 const bad = status === 'invalid' || status === 'duplicate';
+                const failedText = row.failed ? decode(row.failed) : '';
                 return (
                   <tr key={row.id} className="group">
-                    <td className="relative h-9 border-r border-b bg-muted/50 text-center text-xs text-muted-foreground">
+                    <td className="sticky left-0 z-10 h-9 w-12 min-w-12 border-r border-b bg-muted text-center text-xs text-muted-foreground">
                       <span className="group-hover:invisible">{i + 1}</span>
                       <button
                         type="button"
@@ -139,7 +176,7 @@ export function SpreadsheetGrid({ rows, onChange }: Props) {
                       </button>
                     </td>
 
-                    <td className="border-r border-b p-0">
+                    <td className="border-r border-b bg-card p-0 max-md:sticky max-md:left-12 max-md:z-10 max-md:shadow-[1px_0_0_var(--border)]">
                       <input
                         data-row={i}
                         value={row.recruiter}
@@ -153,19 +190,19 @@ export function SpreadsheetGrid({ rows, onChange }: Props) {
                             ? 'Not a valid email address'
                             : status === 'duplicate'
                               ? 'This email is already in the list'
-                              : undefined
+                              : row.recruiter || undefined
                         }
                         placeholder={i === 0 ? 'recruiter@company.com' : ''}
                         spellCheck={false}
                         autoComplete="off"
-                        className={`h-9 w-full bg-transparent px-3 outline-none focus:bg-indigo-500/5 focus:ring-2 focus:ring-indigo-500/50 focus:ring-inset ${
+                        className={`h-9 w-full min-w-[15rem] bg-transparent px-3 text-ellipsis outline-none focus:bg-indigo-500/5 focus:ring-2 focus:ring-indigo-500/50 focus:ring-inset ${
                           bad ? 'text-destructive' : ''
                         }`}
                       />
                     </td>
 
                     <td
-                      className={`h-9 border-r border-b bg-muted/30 px-3 ${
+                      className={`h-9 border-r border-b bg-muted/30 px-3 text-xs whitespace-nowrap sm:text-sm ${
                         row.delivered
                           ? 'text-emerald-600 dark:text-emerald-400'
                           : 'text-muted-foreground'
@@ -173,10 +210,20 @@ export function SpreadsheetGrid({ rows, onChange }: Props) {
                     >
                       {row.delivered}
                     </td>
+
                     <td
-                      className={`h-9 border-b bg-muted/30 px-3 ${row.failed ? 'text-destructive' : 'text-muted-foreground'}`}
+                      className={`h-9 border-b bg-muted/30 px-3 py-1 align-middle text-xs sm:text-sm ${
+                        row.failed ? 'text-destructive' : 'text-muted-foreground'
+                      }`}
                     >
-                      {row.failed}
+                      {failedText && (
+                        <span
+                          className="line-clamp-2 break-words"
+                          title={failedText}
+                        >
+                          {failedText}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );
