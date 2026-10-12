@@ -429,6 +429,6 @@ def start_scheduler() -> None:
     scheduler.add_job(
             refresh_jobs, "interval", days=1, id="jobs",
             max_instances=1, coalesce=True,
-            next_run_time=datetime.now(timezone.utc),   
+            next_run_time=first_run,   
         )
     scheduler.start()
