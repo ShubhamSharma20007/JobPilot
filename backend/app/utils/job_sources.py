@@ -3,12 +3,16 @@
 Boards: Hacker News "Who is hiring", Remotive, optional Greenhouse / Lever via
     JOB_BOARDS="greenhouse:stripe,lever:cred"
 Per-title: Adzuna and JSearch, queried with the job titles found in users' resumes.
+
+Quota protection (Adzuna + JSearch have small free limits):
+  * each (source, job title) is called at most ONCE per UTC day, tracked in Redis
+  * each source also has a hard daily budget: ADZUNA_DAILY_LIMIT / JSEARCH_DAILY_LIMIT
+Results are saved in the jobs table, so every user shares them for the rest of the day.
 """
 import hashlib
 import html
 import os
 import re
-import time
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 
@@ -18,19 +22,22 @@ from sqlalchemy.exc import IntegrityError
 from config.config import config
 from database.db import SessionLocal
 from models.job_model import Job
-from models.user_ai_model import UserAI
-from utils.cache import cache_get, cache_set
+from utils.cache import cache_claim, cache_incr, cache_release
 from utils.categories import classify
 from models.user_profile_model import UserProfile
 from utils.profile_logic import effective_profile
-from models.user_ai_model import UserAI
 
 HEADERS = {"User-Agent": "JobPilot/1.0 (job aggregator)"}
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
 TAG_RE = re.compile(r"<[^>]+>")
 KEEP_DAYS = 15
 PLACE = "India"                   # change this, or read it from profile["location"] later
-_recent: dict[str, float] = {}    # fallback when Redis isn't configured
+
+# Hard cap of API calls per source per UTC day, whatever the titles are. Override in .env.
+DAILY_LIMITS = {
+    "adzuna": int(os.getenv("ADZUNA_DAILY_LIMIT", "50")),
+    "jsearch": int(os.getenv("JSEARCH_DAILY_LIMIT", "10")),
+}
 
 
 # ---------- helpers ----------
@@ -160,15 +167,12 @@ def fetch_adzuna(what: str = "developer", pages: tuple = (1,)) -> list[dict]:
         return []
     out = []
     for page in pages:
-        try:
-            data = _get(
-                f"https://api.adzuna.com/v1/api/jobs/in/search/{page}",
-                params={"app_id": app_id, "app_key": app_key, "results_per_page": 50,
-                        "what": what, "content-type": "application/json"},
-            )
-        except requests.RequestException as e:
-            print(f"fetch_adzuna: '{what}' page {page} failed ({type(e).__name__})")
-            break
+        # errors propagate to fetch_for_titles, which decides whether the day's claim is kept
+        data = _get(
+            f"https://api.adzuna.com/v1/api/jobs/in/search/{page}",
+            params={"app_id": app_id, "app_key": app_key, "results_per_page": 50,
+                    "what": what, "content-type": "application/json"},
+        )
         for j in data.get("results", []):
             try:
                 posted = datetime.fromisoformat(j["created"].replace("Z", "+00:00"))
@@ -238,18 +242,51 @@ def _store(db, rows: list[dict]) -> int:
     return added
 
 
-def _claim_query(title: str, ttl: int = 20 * 3600) -> bool:
-    """True if this title wasn't fetched recently. Protects the free API quotas."""
-    key = "jobq:" + re.sub(r"\s+", " ", title.lower()).strip()
-    if cache_get(key) or _recent.get(key, 0) > time.time():
-        return False
-    cache_set(key, 1, ttl)
-    _recent[key] = time.time() + ttl
-    return True
+# ---------- once-a-day guard for the limited APIs ----------
+# source name -> (is it configured?, how to call it for one title)
+SOURCES = {
+    "adzuna": (
+        lambda: bool(config.get("ADZUNA_APP_ID") and config.get("ADZUNA_APP_KEY")),
+        lambda title: fetch_adzuna(title),
+    ),
+    "jsearch": (
+        lambda: bool(config.get("OPENWEBNINJA_API_KEY")),
+        lambda title: fetch_jsearch([f"{title} in {PLACE}"]),
+    ),
+}
+
+
+def _seconds_left_today() -> int:
+    """Seconds until the next UTC midnight (+1 min), so a claim dies when the day rolls over."""
+    now = datetime.now(timezone.utc)
+    midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return int((midnight - now).total_seconds()) + 60
+
+
+def _norm(title: str) -> str:
+    return re.sub(r"\s+", " ", title.lower()).strip()
+
+
+def _claim_call(source: str, title: str) -> str | None:
+    """Ask permission to call `source` for `title` today.
+    Returns the claim key if allowed, or None if it was already called today or the daily budget is used up."""
+    ttl = _seconds_left_today()
+    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    key = f"jobapi:{source}:{day}:{_norm(title)}"
+    if not cache_claim(key, ttl):                       # same title already fetched today
+        return None
+    if cache_incr(f"jobapi:budget:{source}:{day}", ttl) > DAILY_LIMITS[source]:
+        cache_release(key)                              # budget gone: stop calling this source until tomorrow
+        print(f"job_sources: {source} daily budget ({DAILY_LIMITS[source]}) used up")
+        return None
+    return key
 
 
 def fetch_for_titles(titles: list[str], force: bool = False, domain: str | None = None) -> int:
     """Fetch jobs for the titles of a parsed resume (any profession).
+
+    Adzuna and JSearch run at most once per (source, title) per UTC day, and never more than their
+    daily budget. `force=True` skips that guard, so only use it for a manual one-off run.
 
     `domain` is the user's field. Jobs the keyword classifier can't place ("other")
     take it, so a search for "Staff Nurse" is never hidden from the nurse who asked for it.
@@ -258,14 +295,28 @@ def fetch_for_titles(titles: list[str], force: bool = False, domain: str | None 
     added = 0
     try:
         for title in [t.strip() for t in titles if t and t.strip()][:3]:
-            if not force and not _claim_query(title):
-                continue
             rows: list[dict] = []
-            for fn in (lambda t=title: fetch_adzuna(t), lambda t=title: fetch_jsearch([f"{t} in {PLACE}"])):
+            for source, (configured, call) in SOURCES.items():
+                if not configured():
+                    continue
+                key = None
+                if not force:
+                    key = _claim_call(source, title)
+                    if key is None:
+                        print(f"job_sources: skip {source} '{title}' (already fetched today or budget used)")
+                        continue
                 try:
-                    rows += fn()
+                    rows += call(title)
+                except requests.HTTPError as e:
+                    # 429 / 4xx / 5xx: keep the claim, so a rate-limited key isn't hammered all day
+                    print(f"job_sources: {source} '{title}' failed with HTTP error, retry tomorrow:", e)
+                except requests.RequestException as e:
+                    # network problem: the provider never counted it, so give the claim back
+                    if key:
+                        cache_release(key)
+                    print(f"job_sources: {source} '{title}' network error, will retry later:", e)
                 except Exception as e:
-                    print(f"fetch_for_titles: '{title}' failed:", e)
+                    print(f"job_sources: {source} '{title}' failed:", e)
             if domain and domain != "other":
                 for r in rows:
                     if r["category"] == "other":
@@ -281,11 +332,12 @@ def fetch_for_titles(titles: list[str], force: bool = False, domain: str | None 
 
 
 def _demand_titles(db, limit: int = 12) -> list[tuple[str, str | None]]:
-    """The most common (title, domain) pairs across all parsed resumes."""
+    """The most common (title, domain) pairs across all users' positions."""
     counts: Counter = Counter()
-    for (p,) in db.query(UserAI.profile).filter(UserAI.profile.isnot(None)).all():
-        for t in (p.get("titles") or [])[:3]:
-            counts[(t.lower().strip(), p.get("domain"))] += 1
+    for prof in db.query(UserProfile).all():
+        eff = effective_profile(prof)
+        if eff:
+            counts[(eff["titles"][0].lower().strip(), eff["domain"])] += 1
     return [pair for pair, _ in counts.most_common(limit)]
 
 
@@ -324,15 +376,7 @@ def refresh_jobs() -> None:
     finally:
         db.close()
 
-    # outside the session above, because fetch_for_titles opens its own
+    # outside the session above, because fetch_for_titles opens its own.
+    # force=False on purpose: a title a user already triggered today must not be fetched again.
     for title, domain in titles:
-        fetch_for_titles([title], force=True, domain=domain)
-
-
-def _demand_titles(db, limit: int = 12) -> list[tuple[str, str | None]]:
-    counts: Counter = Counter()
-    for prof in db.query(UserProfile).all():
-        eff = effective_profile(prof)
-        if eff:
-            counts[(eff["titles"][0].lower().strip(), eff["domain"])] += 1
-    return [pair for pair, _ in counts.most_common(limit)]
+        fetch_for_titles([title], force=False, domain=domain)
