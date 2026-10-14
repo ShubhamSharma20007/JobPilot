@@ -420,7 +420,7 @@ def start_scheduler() -> None:
         return
     print("scheduler: ON")
     recover_interrupted()
-    scheduler.add_job(tick, "interval", minutes=5, id="tick", max_instances=1, coalesce=True)
+    scheduler.add_job(tick, "interval", minutes=10, id="tick", max_instances=1, coalesce=True)
     scheduler.add_job(send_summaries, "interval", minutes=30, id="summaries", max_instances=1, coalesce=True)
     scheduler.add_job(check_bounces, "interval", minutes=30, id="bounces", max_instances=1, coalesce=True)
     scheduler.add_job(queue_followups, "interval", minutes=60, id="followups", max_instances=1, coalesce=True)
