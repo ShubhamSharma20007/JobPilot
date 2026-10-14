@@ -97,6 +97,43 @@ function Score({ value }: { value: number }) {
     );
 }
 
+function AiLimit({ used, limit }: { used: number; limit: number }) {
+    const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+    const full = used >= limit;
+
+    return (
+        <div
+            className="w-full shrink-0 rounded-xl border bg-card/60 px-3.5 py-2.5 backdrop-blur sm:w-auto sm:min-w-52"
+            role="status"
+            aria-label={`${used} of ${limit} AI applies used today`}
+        >
+            <p className="flex items-center justify-between gap-4 text-xs  text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                    <Sparkles
+                        className={`size-3.5 ${full ? 'text-destructive' : 'text-indigo-500'}`}
+                    />
+                    AI applies today
+                </span>
+                <span
+                    className={`font-medium tabular-nums not-italic ${full ? 'text-destructive' : 'text-foreground'
+                        }`}
+                >
+                    {used} / {limit}
+                </span>
+            </p>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                <div
+                    className={`h-full rounded-full transition-all duration-500 ${full
+                        ? 'bg-destructive'
+                        : 'bg-linear-to-r from-indigo-500 to-violet-500'
+                        }`}
+                    style={{ width: `${pct}%` }}
+                />
+            </div>
+        </div>
+    );
+}
+
 function Chip({
     active,
     onClick,
@@ -497,8 +534,6 @@ export default function Jobs() {
         return () => clearTimeout(t);
     }, [load, q]);
 
-
-
     async function apply(job: Job) {
         setBusyId(job.id);
         try {
@@ -543,9 +578,6 @@ export default function Jobs() {
         setFilters(f);
         setPage(0);
     };
-
-
-    
 
     // New resume, or a different default resume: read it once, automatically.
     useEffect(() => {
@@ -662,21 +694,24 @@ export default function Jobs() {
             </div>
 
             <section className="mx-auto max-w-5xl px-4 py-12">
-                <div>
-                    <h1 className="font-heading text-3xl font-bold">
-                        Find{' '}
-                        <span className="bg-linear-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">
-                            jobs
-                        </span>
-                    </h1>
-                    <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                        Fresh openings from free public sources, ranked against your resume.
-                        AI apply writes a personalised email and queues it from your own
-                        Gmail.
-                    </p>
+                <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+                    <div className="min-w-0">
+                        <h1 className="font-heading text-3xl font-bold">
+                            Find{' '}
+                            <span className="bg-linear-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">
+                                jobs
+                            </span>
+                        </h1>
+                        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                            Fresh openings from free public sources, ranked against your
+                            resume. AI apply writes a personalised email and queues it from
+                            your own Gmail.
+                        </p>
+                    </div>
+
+                    <AiLimit used={data.appliedToday} limit={data.aiDailyLimit} />
                 </div>
 
-        <span className="ml-auto tabular-nums">{data.appliedToday} of {data.aiDailyLimit} AI applies today</span>
                 {data.profile && (
                     <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border bg-linear-to-r from-indigo-500/[0.07] via-transparent to-transparent p-4">
                         <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-linear-to-br from-indigo-500/15 to-violet-500/15 text-indigo-500 ring-1 ring-indigo-500/15">
@@ -779,7 +814,6 @@ export default function Jobs() {
                             <X className="size-3" />
                         </button>
                     ))}
-                    
                 </div>
 
                 {data.jobs.length === 0 ? (
@@ -797,7 +831,6 @@ export default function Jobs() {
                                     setFilters(DEFAULT_FILTERS);
                                     setOnlyEmail(false);
                                     setQ('');
-                   
                                     setPage(0);
                                 }}
                             >
