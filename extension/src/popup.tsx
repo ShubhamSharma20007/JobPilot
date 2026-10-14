@@ -10,8 +10,8 @@ import {
 import { Info, ExternalLink } from "lucide-react"
 import { cn } from "./lib/utils"
 
-const JOBPILOT_URL = "http://localhost:5173"
-
+// const JOBPILOT_URL = "http://localhost:5173"
+const JOBPILOT_URL = "https://jobpilot-1bc0e.firebaseapp.com"
 type User = {
   name: string
   email: string
@@ -49,12 +49,11 @@ export default function Popup() {
     window.close()
   }
 
-  const handleLogout = async () => {
-    await chrome.storage.local.remove(["jp_user", "jp_token"])
-    fetch("http://localhost:8001/auth/logout", { method: "POST", credentials: "include" }).catch(() => {})
-    setUser(null)
+  const handleLogout = () => {
+    chrome.runtime.sendMessage({ type: "LOGOUT" }, () => {
+      setUser(null)
+    })
   }
-
   const handleOpenSheet = () => {
     chrome.runtime.sendMessage({ type: "OPEN_SHEET" })
     window.close()

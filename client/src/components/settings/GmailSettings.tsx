@@ -19,7 +19,7 @@ export function GmailSettings() {
         label={connected ? 'Connected' : 'Not connected'}
         help={
           connected
-            ? `Emails are sent from ${user.email}. JobPilot can only send mail, not read your inbox.`
+            ? `Emails are sent from ${user.email}. JobPilot only reads delivery failure notices and replies to emails it sent, nothing else in your inbox.`
             : 'Allow JobPilot to send email on your behalf. You can revoke this at any time.'
         }
       >

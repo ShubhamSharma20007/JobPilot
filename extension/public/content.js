@@ -79,7 +79,7 @@ function buildTooltip(email, viewportRect) {
   `;
 
   // ── Position: fixed, below selection, nudged to stay on screen ──
-  const TIP_W = 380;
+  const TIP_W = 340;
   const TIP_H = 56;
   const GAP = 8;
 

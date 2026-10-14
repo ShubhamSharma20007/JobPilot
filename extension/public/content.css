@@ -3,7 +3,6 @@
    Styled like the shadcn Card + Button used in the client app.
    position:fixed so it works inside iframes (Gmail etc.)
    ============================================================ */
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..600&display=swap");
 
 #jp-tooltip {
   all: initial;

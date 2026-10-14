@@ -1,9 +1,9 @@
 /* background.js – service worker for JobPilot extension */
 
-// const API_BASE='https://jobpilot-ivt1.onrender.com'
-// const JOBPILOT_URL='https://jobpilot-1bc0e.firebaseapp.com'
-const API_BASE='http://localhost:8001'
-const JOBPILOT_URL='http://localhost:5173'
+const API_BASE='https://jobpilot-ivt1.onrender.com'
+const JOBPILOT_URL='https://jobpilot-1bc0e.firebaseapp.com'
+// const API_BASE='http://localhost:8001'
+// const JOBPILOT_URL='http://localhost:5173'
 console.log(API_BASE, JOBPILOT_URL);
 
 // ─── fetch current user from backend session ───────────────────────────────
@@ -88,5 +88,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "OPEN_SHEET") {
     chrome.tabs.create({ url: `${JOBPILOT_URL}/sheet` });
     sendResponse({ ok: true });
+  }
+    if (msg.type === "LOGOUT") {
+    fetch(`${API_BASE}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    })
+      .catch(() => {})
+      .finally(() => sendResponse({ ok: true }));
+    return true; // keep port open for async response
   }
 });

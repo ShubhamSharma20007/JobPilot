@@ -95,7 +95,7 @@ export const FAQ = [
   },
   {
     q: 'What does it need access to, and is it safe?',
-    a: 'Permission to send email and to use the sheet it creates. Your Google tokens are stored encrypted. You can revoke access and delete your data at any time.',
+    a:"Permission to send email from your account, and to read delivery failure notices and replies to emails JobPilot sent. It does not read the rest of your inbox. Your Google tokens are stored encrypted. You can revoke access and delete your data at any time.",
   },
   {
     q: 'Can I use more than one resume?',

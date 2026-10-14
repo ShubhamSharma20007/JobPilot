@@ -1,30 +1,19 @@
 {
   "manifest_version": 3,
   "name": "JobPilot – Add to Sheet",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Select any email on any page and add it instantly to your JobPilot recruiter sheet.",
   "icons": {
-    "16":  "icons/icon16.png",
-    "32":  "icons/icon32.png",
-    "48":  "icons/icon48.png",
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": [
-    "storage",
-    "identity",
-    "activeTab",
-    "cookies",
-    "sidePanel"
-  ],
+  "permissions": ["sidePanel"],
   "side_panel": {
     "default_path": "popup.html"
   },
-  "host_permissions": [
-     "https://jobpilot-api-v1.duckdns.org/*",
-     "https://jobpilot-1bc0e.firebaseapp.com/*",
-      "http://localhost:8001/*",
-      "http://localhost:5173/*"
-   ],
+  "host_permissions": ["https://jobpilot-ivt1.onrender.com/*"],
   "background": {
     "service_worker": "background.js"
   },
@@ -38,7 +27,6 @@
     }
   ],
   "action": {
-
     "default_title": "JobPilot"
   },
   "web_accessible_resources": [
