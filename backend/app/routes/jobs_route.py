@@ -51,6 +51,8 @@ def profile_position(body: PositionBody, request: Request, background: Backgroun
         raise HTTPException(400, "Your position comes from your resume. Upload a different resume to change it.")
     set_position(db, uid, body.position)
     eff = effective_profile(db.get(UserProfile, uid))
+    if eff and eff["source"] == "resume":
+        raise HTTPException(400, "Your position comes from your resume. Upload a different resume to change it.")
     if eff:
         background.add_task(fetch_for_titles, eff["titles"], False, eff["domain"])
     return profile_out(db, uid)

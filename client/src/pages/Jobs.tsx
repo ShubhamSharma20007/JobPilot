@@ -612,13 +612,17 @@ export default function Jobs() {
 
     if (data.stage !== 'ready') {
         return (
-            <JobsGate
+           <JobsGate
                 stage={data.stage}
-                onSaved={() => {
-                    load();
-                    setTimeout(() => load(true), 8000); // jobs for the new position arrive in the background
+                onSaved={async () => {
+                    const fresh = await jobsService.list({ ...filters, category: filters.category ?? undefined });
+                    setData(fresh);
+                    if (fresh.stage !== 'ready') {
+                    toast.error("Position wasn't saved", { description: 'Please try again.' });
+                    }
+                    setTimeout(() => load(true), 8000);
                 }}
-            />
+                />
         );
     }
     const pages = Math.max(1, Math.ceil(data.total / data.pageSize));

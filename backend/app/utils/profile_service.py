@@ -23,6 +23,38 @@ def default_file(db, user_id):
 
 
 def kick_parse(db, user_id, background: BackgroundTasks) -> None:
+    f = default_file(db, user_id)
+    prof = db.get(UserProfile, user_id)
+
+    if not f:
+        # No resume. Only clear a profile that was built from a resume that is now gone.
+        # A position the user typed (no resume involved) must be left alone.
+        if prof and prof.parsed_file_id:
+            prof.parsed = None
+            prof.parsed_file_id = None
+            prof.manual_position = None
+            prof.parse_status = "none"
+            db.commit()
+        return
+
+    if prof and prof.parsed_file_id == f.id:
+        if prof.parse_status != "parsing":
+            return
+        if prof.updated_at and prof.updated_at > datetime.now(timezone.utc) - STALE:
+            return
+        prof.parse_status = "failed"
+        db.commit()
+        return
+
+    if prof is None:
+        prof = UserProfile(user_id=user_id)
+        db.add(prof)
+    prof.parsed_file_id, prof.parse_status = f.id, "parsing"
+    prof.parsed = None
+    prof.manual_position = None
+    db.commit()
+    background.add_task(run_parse, user_id, f.id)
+
     """Parse the default resume in the background if it hasn't been parsed yet.
     A new default resume wipes the old position, so the position always follows the current resume."""
     f = default_file(db, user_id)
