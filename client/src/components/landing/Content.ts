@@ -124,7 +124,8 @@ export const PRODUCT_HUNT = {
   postId: '1270220',
 };
 export const EXTENSION = {
-  comingSoon: true, // set to false once the Chrome Web Store listing is live
-  storeUrl: '',
-  zipUrl: '/jobpilot-extension.zip',
+  comingSoon: false,
+  storeUrl:
+    'https://chromewebstore.google.com/detail/jobpilot-%E2%80%93-add-to-sheet/gnickholbhfjoooejefkkpolemjjodpd',
+  // zipUrl: '/jobpilot-extension.zip', // no longer used once storeUrl is set, you can delete it
 };

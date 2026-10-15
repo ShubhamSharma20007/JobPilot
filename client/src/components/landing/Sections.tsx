@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   APP,
+  EXTENSION,
   FAQ,
   FEATURES,
   FLOW,
@@ -459,16 +460,18 @@ export function FinalCta() {
               </Button>
             )}
             <a
-              href="#extension"
-              className={buttonVariants({
-                variant: 'ghost',
-                size: 'lg',
-                className:
-                  'h-11 px-5 text-base text-primary-foreground hover:bg-white/10 hover:text-primary-foreground',
-              })}
-            >
-              Get the extension
-            </a>
+  href={EXTENSION.storeUrl}
+  target="_blank"
+  rel="noopener noreferrer"
+  className={buttonVariants({
+    variant: 'ghost',
+    size: 'lg',
+    className:
+      'h-11 px-5 text-base text-primary-foreground hover:bg-white/10 hover:text-primary-foreground',
+  })}
+>
+  Get the extension
+</a>
           </div>
         </div>
       </Reveal>
