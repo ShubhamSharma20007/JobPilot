@@ -1,6 +1,6 @@
 // GoogleSignIn.tsx
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
-import { useSearchParams } from 'react-router-dom';
+// import { useSearchParams } from 'react-router-dom';
 import { loginWithGoogle } from '@/redux/slices/authSlice';
 import { useAppDispatch } from '@/redux/hook';
 import { notifyExtensionLoggedIn } from '@/utils/extension';
@@ -33,8 +33,8 @@ function GoogleG() {
 
 export function GoogleSignIn() {
   const dispatch = useAppDispatch();
-  const [searchParams] = useSearchParams();
-  const fromExtension = searchParams.get('from') === 'extension';
+  // const [searchParams] = useSearchParams();
+  // const fromExtension = searchParams.get('from') === 'extension';
   async function handleGoogleLogin(res: CredentialResponse) {
     const toastId = toast.loading('Signing in with Google...');
     if (!res.credential) return;

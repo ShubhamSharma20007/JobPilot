@@ -144,14 +144,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === "LOGIN_SUCCESS") {
-    const tabId = sender.tab?.id;
-    const tabUrl = sender.tab?.url || "";
     const windowId = sender.tab?.windowId;
     (async () => {
-      // Only close if it was the dedicated login tab spawned with ?from=extension
-      if (tabId && tabUrl.includes("from=extension")) {
-        await chrome.tabs.remove(tabId).catch(() => {});
-      }
+      // ── Never close the tab. The user stays on the JobPilot page ──
+      // Just open/refresh the side panel so it picks up the new session
+         // Only close if it was the dedicated login tab spawned with ?from=extension
+      // if (tabId && tabUrl.includes("from=extension")) {
+      //   await chrome.tabs.remove(tabId).catch(() => {});
+      // }
       try {
         if (windowId) await chrome.sidePanel.open({ windowId });
       } catch {
@@ -177,7 +177,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "OPEN_LOGIN") {
     (async () => {
       const { env } = await fetchMe();
-      const loginUrl = `${env.web}?from=extension`;
+      const loginUrl = env.web; // no ?from=extension — tab stays open after login
       try {
         // If an existing JobPilot tab is already open, focus it
         const tabs = await chrome.tabs.query({
