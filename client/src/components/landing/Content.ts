@@ -127,5 +127,5 @@ export const EXTENSION = {
   comingSoon: false,
   storeUrl:
     'https://chromewebstore.google.com/detail/jobpilot-%E2%80%93-add-to-sheet/gnickholbhfjoooejefkkpolemjjodpd',
-  // zipUrl: '/jobpilot-extension.zip', // no longer used once storeUrl is set, you can delete it
+  zipUrl: '', // no longer used once storeUrl is set, you can delete it
 };
