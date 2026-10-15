@@ -43,7 +43,7 @@ export function GoogleSignIn() {
       toast.success('Successfully signed in!', {
         id: toastId,
       });
-      if (fromExtension) notifyExtensionLoggedIn(); // extension closes this tab and opens its popup
+      notifyExtensionLoggedIn(); // notify extension on login
     } catch (error) {
       console.error('Token verification failed', error);
       toast.error('Failed to verify token on backend.');

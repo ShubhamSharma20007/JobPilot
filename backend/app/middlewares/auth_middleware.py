@@ -22,6 +22,10 @@ async def auth_middleware(request: Request, call_next):
 
     token = request.cookies.get(COOKIE_OPTIONS["key"])
     if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+    if not token:
         return _unauthorized("Missing authentication token")
 
     try:

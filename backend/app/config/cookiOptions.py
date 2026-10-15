@@ -1,6 +1,6 @@
 import os
 
-PROD = os.getenv("RENDER") is not None
+PROD = os.getenv("RENDER", "").lower() in ("true", "1")
 
 COOKIE_OPTIONS = {
     "key": "session",

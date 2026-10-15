@@ -217,7 +217,12 @@ document.addEventListener("keydown", removeTooltip, { capture: true });
 window.addEventListener("scroll", removeTooltip, { passive: true });
 window.addEventListener("resize", removeTooltip, { passive: true });
 
-const JOBPILOT_ORIGINS = ["http://localhost:5173", "https://jobpilot-1bc0e.firebaseapp.com"]; // keep in sync with prod URL
+const JOBPILOT_ORIGINS = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://jobpilot-1bc0e.firebaseapp.com",
+  "https://jobpilot-1bc0e.web.app",
+];
 
 window.addEventListener("message", (e) => {
   if (e.source !== window) return;

@@ -10,8 +10,7 @@ import {
 import { Info, ExternalLink } from "lucide-react"
 import { cn } from "./lib/utils"
 
-// const JOBPILOT_URL = "http://localhost:5173"
-const JOBPILOT_URL = "https://jobpilot-1bc0e.firebaseapp.com"
+const DEFAULT_URL = "https://jobpilot-1bc0e.firebaseapp.com"
 type User = {
   name: string
   email: string
@@ -21,32 +20,33 @@ type User = {
 export default function Popup() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [webUrl, setWebUrl] = useState(DEFAULT_URL)
   const [email, setEmail] = useState("")
   const [adding, setAdding] = useState(false)
   const [status, setStatus] = useState<{ msg: string; type: "success" | "warn" | "error" | "" }>({ msg: "", type: "" })
 
- useEffect(() => {
-  const check = () =>
-    chrome.runtime.sendMessage({ type: "CHECK_AUTH" }, (res) => {
-      setUser(res?.user || null)
-      setLoading(false)
-    })
+  useEffect(() => {
+    const check = () =>
+      chrome.runtime.sendMessage({ type: "CHECK_AUTH" }, (res) => {
+        setUser(res?.user || null)
+        if (res?.webUrl) setWebUrl(res.webUrl)
+        setLoading(false)
+      })
 
-  check()
+    check()
 
-  const onMsg = (m: any) => { if (m?.type === "AUTH_CHANGED") check() }
-  chrome.runtime.onMessage.addListener(onMsg)
-  window.addEventListener("focus", check)
+    const onMsg = (m: any) => { if (m?.type === "AUTH_CHANGED") check() }
+    chrome.runtime.onMessage.addListener(onMsg)
+    window.addEventListener("focus", check)
 
-  return () => {
-    chrome.runtime.onMessage.removeListener(onMsg)
-    window.removeEventListener("focus", check)
-  }
-}, [])
+    return () => {
+      chrome.runtime.onMessage.removeListener(onMsg)
+      window.removeEventListener("focus", check)
+    }
+  }, [])
 
   const handleLogin = () => {
     chrome.runtime.sendMessage({ type: "OPEN_LOGIN" })
-    window.close()
   }
 
   const handleLogout = () => {
@@ -56,7 +56,6 @@ export default function Popup() {
   }
   const handleOpenSheet = () => {
     chrome.runtime.sendMessage({ type: "OPEN_SHEET" })
-    window.close()
   }
 
   const handleAdd = async () => {
@@ -229,14 +228,14 @@ export default function Popup() {
       <div className="mt-auto flex items-center gap-2 px-4 py-3 border-t border-border bg-black/5 dark:bg-white/5">
         <a
           href="#"
-          onClick={(e) => { e.preventDefault(); chrome.tabs.create({ url: JOBPILOT_URL }); window.close(); }}
+          onClick={(e) => { e.preventDefault(); chrome.tabs.create({ url: webUrl }); }}
           className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
         >
           JobPilot.app
         </a>
         <span className="flex-1" />
         <a
-          href={`${JOBPILOT_URL}/privacy`}
+          href={`${webUrl}/privacy`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"

@@ -1,17 +1,56 @@
 /* background.js – service worker for JobPilot extension */
 
-const API_BASE='https://jobpilot-ivt1.onrender.com'
-const JOBPILOT_URL='https://jobpilot-1bc0e.firebaseapp.com'
-// const API_BASE='http://localhost:8001'
-// const JOBPILOT_URL='http://localhost:5173'
-console.log(API_BASE, JOBPILOT_URL);
+const ENV_LOCAL = {
+  name: "local",
+  api: "http://localhost:8001",
+  web: "http://localhost:5173",
+};
 
-// ─── fetch current user from backend session ───────────────────────────────
-async function fetchMe() {
+const ENV_PROD = {
+  name: "production",
+  api: "https://jobpilot-api-v1.duckdns.org",
+  web: "https://jobpilot-1bc0e.firebaseapp.com",
+};
+
+let activeEnv = ENV_PROD;
+
+// ─── retrieve session token from chrome cookies ────────────────────────────
+async function getSessionToken(apiUrl) {
+  if (chrome.cookies) {
+    try {
+      const cookie = await chrome.cookies.get({ url: apiUrl, name: "session" });
+      if (cookie && cookie.value) return cookie.value;
+    } catch {}
+    try {
+      // Also check all cookies named "session"
+      const all = await chrome.cookies.getAll({ name: "session" });
+      const host = new URL(apiUrl).hostname;
+      const match = all.find(
+        (c) =>
+          c.domain.includes(host) || host.includes(c.domain.replace(/^\./, ""))
+      );
+      if (match && match.value) return match.value;
+    } catch {}
+  }
+  return null;
+}
+
+// ─── test authentication on a specific environment ─────────────────────────
+async function checkAuthOn(env) {
   try {
-    const res = await fetch(`${API_BASE}/auth/me`, {
+    const token = await getSessionToken(env.api);
+    const headers = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    const res = await fetch(`${env.api}/auth/me`, {
       credentials: "include",
+      headers,
+      signal: controller.signal,
     });
+    clearTimeout(timer);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -19,12 +58,65 @@ async function fetchMe() {
   }
 }
 
-// ─── add a single email via the dedicated extension endpoint ───────────────
+// ─── determine active environment and current user ─────────────────────────
+async function fetchMe() {
+  // Check if open tabs indicate user is working locally
+  let preferLocal = false;
+  try {
+    const tabs = await chrome.tabs.query({});
+    preferLocal = tabs.some(
+      (t) =>
+        t.url &&
+        (t.url.startsWith("http://localhost:5173") ||
+          t.url.startsWith("http://127.0.0.1:5173"))
+    );
+  } catch {}
+
+  const order = preferLocal ? [ENV_LOCAL, ENV_PROD] : [ENV_PROD, ENV_LOCAL];
+
+  for (const env of order) {
+    const user = await checkAuthOn(env);
+    if (user) {
+      activeEnv = env;
+      return { user, env };
+    }
+  }
+
+  // If not logged in, determine which env to use for login
+  if (preferLocal) {
+    activeEnv = ENV_LOCAL;
+  } else {
+    // Quick check if local backend is up
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 300);
+      const res = await fetch("http://localhost:8001/db-check", {
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (res.ok) activeEnv = ENV_LOCAL;
+      else activeEnv = ENV_PROD;
+    } catch {
+      activeEnv = ENV_PROD;
+    }
+  }
+
+  return { user: null, env: activeEnv };
+}
+
+// ─── add a single email via dedicated extension endpoint ───────────────────
 async function addEmailToSheet(email) {
-  const res = await fetch(`${API_BASE}/sheet/add`, {
+  const env = activeEnv;
+  const token = await getSessionToken(env.api);
+  const headers = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${env.api}/sheet/add`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ email }),
   });
 
@@ -37,39 +129,41 @@ async function addEmailToSheet(email) {
   return data;
 }
 
-
-//  Open sidebar
+// ─── open sidebar ──────────────────────────────────────────────────────────
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
   .catch(console.error);
 
-
-// ─── message handler ────────────────────────────────────────────────────────
+// ─── message handler ───────────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "CHECK_AUTH") {
     fetchMe()
-      .then((user) => sendResponse({ user: user ?? null }))
-      .catch(() => sendResponse({ user: null }));
+      .then(({ user, env }) => sendResponse({ user, webUrl: env.web }))
+      .catch(() => sendResponse({ user: null, webUrl: activeEnv.web }));
     return true; // keep port open for async response
   }
 
   if (msg.type === "LOGIN_SUCCESS") {
-  const tabId = sender.tab?.id;
-  const windowId = sender.tab?.windowId;
-  (async () => {
-    if (tabId) await chrome.tabs.remove(tabId).catch(() => {});
-    try {
-      await chrome.sidePanel.open({ windowId }); // may need a user gesture
-    } catch {
-      chrome.action.setBadgeText({ text: "✓" });
-      chrome.action.setBadgeBackgroundColor({ color: "#6366f1" });
-      setTimeout(() => chrome.action.setBadgeText({ text: "" }), 5000);
-    }
-    // tell an already-open panel to re-check auth
-    chrome.runtime.sendMessage({ type: "AUTH_CHANGED" }).catch(() => {});
-  })();
-  sendResponse({ ok: true });
-}
+    const tabId = sender.tab?.id;
+    const tabUrl = sender.tab?.url || "";
+    const windowId = sender.tab?.windowId;
+    (async () => {
+      // Only close if it was the dedicated login tab spawned with ?from=extension
+      if (tabId && tabUrl.includes("from=extension")) {
+        await chrome.tabs.remove(tabId).catch(() => {});
+      }
+      try {
+        if (windowId) await chrome.sidePanel.open({ windowId });
+      } catch {
+        chrome.action.setBadgeText({ text: "✓" });
+        chrome.action.setBadgeBackgroundColor({ color: "#6366f1" });
+        setTimeout(() => chrome.action.setBadgeText({ text: "" }), 5000);
+      }
+      // tell an already-open panel to re-check auth
+      chrome.runtime.sendMessage({ type: "AUTH_CHANGED" }).catch(() => {});
+    })();
+    sendResponse({ ok: true });
+  }
 
   if (msg.type === "ADD_EMAIL") {
     addEmailToSheet(msg.email)
@@ -81,21 +175,66 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === "OPEN_LOGIN") {
-    chrome.tabs.create({ url: `${JOBPILOT_URL}?from=extension` });
+    (async () => {
+      const { env } = await fetchMe();
+      const loginUrl = `${env.web}?from=extension`;
+      try {
+        // If an existing JobPilot tab is already open, focus it
+        const tabs = await chrome.tabs.query({
+          url: [
+            `${env.web}/*`,
+            "http://localhost:5173/*",
+            "http://127.0.0.1:5173/*",
+            "https://jobpilot-1bc0e.firebaseapp.com/*",
+            "https://jobpilot-1bc0e.web.app/*",
+          ],
+        });
+        if (tabs && tabs.length > 0) {
+          const targetTab = tabs[0];
+          await chrome.tabs.update(targetTab.id, { active: true });
+          if (targetTab.windowId) {
+            await chrome.windows.update(targetTab.windowId, { focused: true });
+          }
+          return;
+        }
+      } catch {}
+      chrome.tabs.create({ url: loginUrl });
+    })();
     sendResponse({ ok: true });
   }
 
   if (msg.type === "OPEN_SHEET") {
-    chrome.tabs.create({ url: `${JOBPILOT_URL}/sheet` });
+    (async () => {
+      const env = activeEnv;
+      const sheetUrl = `${env.web}/sheet`;
+      try {
+        const tabs = await chrome.tabs.query({ url: [`${env.web}/sheet*`] });
+        if (tabs && tabs.length > 0) {
+          await chrome.tabs.update(tabs[0].id, { active: true });
+          if (tabs[0].windowId) {
+            await chrome.windows.update(tabs[0].windowId, { focused: true });
+          }
+          return;
+        }
+      } catch {}
+      chrome.tabs.create({ url: sheetUrl });
+    })();
     sendResponse({ ok: true });
   }
-    if (msg.type === "LOGOUT") {
-    fetch(`${API_BASE}/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    })
-      .catch(() => {})
-      .finally(() => sendResponse({ ok: true }));
-    return true; // keep port open for async response
+
+  if (msg.type === "LOGOUT") {
+    (async () => {
+      const env = activeEnv;
+      const token = await getSessionToken(env.api);
+      const headers = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      await fetch(`${env.api}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers,
+      }).catch(() => {});
+      sendResponse({ ok: true });
+    })();
+    return true;
   }
 });
