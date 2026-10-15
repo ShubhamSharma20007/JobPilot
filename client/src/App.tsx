@@ -8,7 +8,7 @@ import { Toaster } from './components/ui/sonner';
 import { dispatchAuth } from './redux/hooks/dispatchAuth';
 import { useAuth } from './redux/hooks/useAuth';
 import { prefetchPages } from './utils/page';
-import { notifyExtensionLoggedIn } from './utils/extension';
+
 
 const Profile = lazy(() => import('@/pages/Profile'));
 const Settings = lazy(() => import('@/pages/Settings'));
@@ -25,11 +25,7 @@ const App = () => {
   const dispatch = useAppDispatch();
   const { fetchCurrentUser } = dispatchAuth();
   const { user } = useAuth();
-  useEffect(() => {
-    if (user) {
-      notifyExtensionLoggedIn();
-    }
-  }, [user?.id]);
+
   useEffect(() => {
     fetchCurrentUser();
   }, [dispatch]);

@@ -227,6 +227,13 @@ const JOBPILOT_ORIGINS = [
 window.addEventListener("message", (e) => {
   if (e.source !== window) return;
   if (!JOBPILOT_ORIGINS.includes(window.location.origin)) return;
-  if (e.data?.source !== "jobpilot-web" || e.data?.type !== "LOGIN_SUCCESS") return;
-  chrome.runtime.sendMessage({ type: "LOGIN_SUCCESS" });
+  if (e.data?.source === "jobpilot-web" && e.data?.type === "LOGIN_SUCCESS") {
+    chrome.runtime.sendMessage({ type: "LOGIN_SUCCESS" });
+  }
+  if (e.data?.source === "jobpilot-web" && e.data?.type === "LOGOUT_SUCCESS") {
+    chrome.runtime.sendMessage({ type: "LOGOUT_SUCCESS" });
+  }
+  if (e.data?.source === 'jobpilot-web' && e.data?.type === 'CLOSE_PANEL') {
+    chrome.runtime.sendMessage({ type: "CLOSE_PANEL" });
+  }
 });

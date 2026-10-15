@@ -35,7 +35,10 @@ export default function Popup() {
 
     check()
 
-    const onMsg = (m: any) => { if (m?.type === "AUTH_CHANGED") check() }
+    const onMsg = (m: any) => {
+      if (m?.type === "AUTH_CHANGED") check()
+      if (m?.type === "CLOSE_PANEL") window.close()
+    }
     chrome.runtime.onMessage.addListener(onMsg)
     window.addEventListener("focus", check)
 

@@ -144,24 +144,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === "LOGIN_SUCCESS") {
-    const windowId = sender.tab?.windowId;
-    (async () => {
-      // ── Never close the tab. The user stays on the JobPilot page ──
-      // Just open/refresh the side panel so it picks up the new session
-         // Only close if it was the dedicated login tab spawned with ?from=extension
-      // if (tabId && tabUrl.includes("from=extension")) {
-      //   await chrome.tabs.remove(tabId).catch(() => {});
-      // }
-      try {
-        if (windowId) await chrome.sidePanel.open({ windowId });
-      } catch {
-        chrome.action.setBadgeText({ text: "✓" });
-        chrome.action.setBadgeBackgroundColor({ color: "#6366f1" });
-        setTimeout(() => chrome.action.setBadgeText({ text: "" }), 5000);
-      }
-      // tell an already-open panel to re-check auth
+    // Close the side panel (it handles window.close() on CLOSE_PANEL)
+    // then broadcast AUTH_CHANGED so it refreshes if the user re-opens it
+    chrome.runtime.sendMessage({ type: "CLOSE_PANEL" }).catch(() => {});
+    // Small delay so the panel has time to close before we update state
+    setTimeout(() => {
       chrome.runtime.sendMessage({ type: "AUTH_CHANGED" }).catch(() => {});
-    })();
+    }, 300);
+    sendResponse({ ok: true });
+  }
+
+  if (msg.type === "LOGOUT_SUCCESS") {
+    // Close the panel immediately, then refresh auth state
+    chrome.runtime.sendMessage({ type: "CLOSE_PANEL" }).catch(() => {});
+    setTimeout(() => {
+      chrome.runtime.sendMessage({ type: "AUTH_CHANGED" }).catch(() => {});
+    }, 300);
     sendResponse({ ok: true });
   }
 

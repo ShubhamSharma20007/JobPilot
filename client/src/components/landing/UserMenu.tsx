@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/redux/hooks/useAuth';
 import { UserAvatar } from './UserAvatar';
+import { closeSidePanel, notifyExtensionLoggedOut } from '@/utils/extension';
 
 const DEFAULT_AVATAR = 'https://github.com/shadcn.png';
 const itemClass = 'gap-3 rounded-lg px-3 py-2 text-sm cursor-pointer';
@@ -37,6 +38,8 @@ export function UserMenu() {
   const src = user.picture ?? DEFAULT_AVATAR;
 
   async function handleLogout() {
+    closeSidePanel();
+    notifyExtensionLoggedOut();
     await logout();
     navigate('/', { replace: true });
   }
