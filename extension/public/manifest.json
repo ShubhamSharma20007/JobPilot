@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "JobPilot – Add to Sheet",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Select any email on any page and add it instantly to your JobPilot recruiter sheet.",
   "icons": {
     "16": "icons/icon16.png",

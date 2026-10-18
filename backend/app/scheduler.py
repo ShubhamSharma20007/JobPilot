@@ -424,11 +424,20 @@ def start_scheduler() -> None:
     scheduler.add_job(send_summaries, "interval", minutes=30, id="summaries", max_instances=1, coalesce=True)
     scheduler.add_job(check_bounces, "interval", minutes=30, id="bounces", max_instances=1, coalesce=True)
     scheduler.add_job(queue_followups, "interval", minutes=60, id="followups", max_instances=1, coalesce=True)
-    # job pool for the /jobs page: once at startup, then every 6 hours, shared by all users
-    
+
+    # Daily at 02:00 UTC. A fixed clock time survives restarts, unlike "24h after boot".
     scheduler.add_job(
             refresh_jobs, "interval", days=1, id="jobs",
             max_instances=1, coalesce=True,
-            next_run_time=first_run,   
+            misfire_grace_time=3600 * 6 # 6h
         )
+     # Catch-up: if the pool is stale (server was asleep at 02:00 or this is a fresh DB), run once shortly after boot.
+    if not _jobs_are_fresh(24):
+        print("scheduler: jobs pool stale, running refresh_jobs shortly")
+        scheduler.add_job(
+            refresh_jobs, "date",
+            run_date=datetime.now(timezone.utc) + timedelta(seconds=30),
+            id="jobs_boot", misfire_grace_time=3600,
+        )
+        
     scheduler.start()
