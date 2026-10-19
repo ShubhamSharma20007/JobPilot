@@ -88,7 +88,7 @@ def _queue_for_user(db, prefs: UserPreference, token: OAuthToken) -> int:
     for r in rows:
         meta = message_meta(db, token, r.gmail_message_id)
         r.followup_checked_at = func.now()  # look at each email once
-        if not meta or not meta["thread_id"] or has_reply(db, token, meta["thread_id"]):
+        if not meta or not meta["thread_id"] or already_replied(db, token, r.user_id, r.gmail_message_id, r.email):
             db.commit()
             continue
         subject = meta["subject"] or "Following up"
@@ -126,3 +126,28 @@ def queue_followups() -> None:
         print("followups error:", e)
     finally:
         db.close()
+        
+        
+        
+def replied_from_address(db,token:OAuthToken,email:str,since:datetime)->bool:
+    """True if this recruiter address wrote to the user after `since`, in ANY thread."""
+    q =f"from:{email} after:{int(since.timestamp())}"
+    res = _get(db, token, API, [("q", q), ("maxResults", "1")])
+    if res.status_code != 200:
+        raise GmailSendError("Couldn't check for replies.")
+    return bool(res.json().get("messages"))
+
+
+def already_replied(db, token: OAuthToken, user_id, first_gmail_id: str, email: str) -> bool:
+    """Did the recruiter answer the first email, in its thread or from the same address elsewhere?"""
+    first = (
+        db.query(RecruiterEmail.sent_at)
+        .filter(RecruiterEmail.user_id == user_id, RecruiterEmail.gmail_message_id == first_gmail_id)
+        .first()
+    )
+    since = first[0] if first and first[0] else datetime.now(timezone.utc) - timedelta(days=MAX_AGE_DAYS)
+
+    meta = message_meta(db, token, first_gmail_id)
+    if meta and meta["thread_id"] and has_reply(db, token, meta["thread_id"]):
+        return True
+    return replied_from_address(db, token, email, since)

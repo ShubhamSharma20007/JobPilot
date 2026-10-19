@@ -24,6 +24,7 @@ from models.user_profile_model import UserProfile
 MAX_AI_DAILY = 50
 PAGE_SIZE = 60
 AI_DAILY_LIMIT = config["AI_DAILY_LIMIT"]
+MAX_JOB_AGE_DAYS = 10
 
 
 # ---------- helpers ----------
@@ -152,13 +153,14 @@ def list_jobs(
     if remote:
         query = query.filter(or_(Job.source == "remotive", Job.location.ilike("%remote%"), Job.title.ilike("%remote%")))
     if max_age_days > 0:
-        since = datetime.now(timezone.utc) - timedelta(days=max_age_days)
+        age_days = min(max_age_days, MAX_JOB_AGE_DAYS) if max_age_days > 0 else MAX_JOB_AGE_DAYS
+        since = datetime.now(timezone.utc) - timedelta(days=age_days)
         query = query.filter(func.coalesce(Job.posted_at, Job.created_at) >= since)
     wanted = [s for s in (sources or "").split(",") if s in ("hn", "remotive", "greenhouse", "lever", "adzuna", "jsearch")]
     if wanted:
         query = query.filter(Job.source.in_(wanted))
 
-    jobs = query.order_by(func.coalesce(Job.posted_at, Job.created_at).desc()).limit(600).all()
+    jobs = query.order_by(func.coalesce(Job.posted_at, Job.created_at).desc()).limit(1000).all()
 
     states = {
         uj.job_id: uj

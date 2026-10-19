@@ -21,7 +21,7 @@ from utils.gmail_client import GmailAuthError, GmailSendError, send_message
 from utils.check_bounces import check_bounces
 from utils.cache import invalidate_profile
 from utils.job_sources import refresh_jobs
-from utils.followups import queue_followups, message_meta
+from utils.followups import queue_followups, message_meta, already_replied
 from models.job_model import Job
 from database.db import SessionLocal
 from sqlalchemy import func
@@ -277,6 +277,27 @@ def sync_user(user_id) -> None:
 
                 try:
                     thread_id = None
+                                 # Follow-up only: the recruiter may have replied while this sat in the queue
+                    if reply_to:
+                        try:
+                            if already_replied(db, token, user_id, reply_to, email):
+                                _mark(db, row_id, status="skipped",
+                                    last_error="Recruiter already replied, follow-up not needed")
+                                continue
+                        except GmailAuthError:
+                            _release(db, rest)
+                            db.delete(token)
+                            db.commit()
+                            invalidate_profile(user_id)
+                            return
+                        except GmailSendError as e:
+                            # can't confirm there was no reply, so never send the nudge
+                            attempts = db.get(RecruiterEmail, row_id).attempts
+                            if attempts < MAX_ATTEMPTS:
+                                _mark(db, row_id, status="pending", last_error=str(e))  # retried next sync
+                            else:
+                                _mark(db, row_id, status="skipped", last_error="Couldn't verify whether the recruiter replied")
+                            continue
                     if reply_to:  # send inside the original Gmail conversation
                         meta = message_meta(db, token, reply_to)
                         if meta and meta["thread_id"]:
@@ -427,10 +448,9 @@ def start_scheduler() -> None:
 
     # Daily at 02:00 UTC. A fixed clock time survives restarts, unlike "24h after boot".
     scheduler.add_job(
-            refresh_jobs, "interval", days=1, id="jobs",
-            max_instances=1, coalesce=True,
-            misfire_grace_time=3600 * 6 # 6h
-        )
+    refresh_jobs, "cron", hour=2, minute=0, id="jobs",
+    max_instances=1, coalesce=True, misfire_grace_time=3600 * 6,
+    )
      # Catch-up: if the pool is stale (server was asleep at 02:00 or this is a fresh DB), run once shortly after boot.
     if not _jobs_are_fresh(24):
         print("scheduler: jobs pool stale, running refresh_jobs shortly")

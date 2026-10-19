@@ -30,7 +30,7 @@ from utils.profile_logic import effective_profile
 HEADERS = {"User-Agent": "JobPilot/1.0 (job aggregator)"}
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
 TAG_RE = re.compile(r"<[^>]+>")
-KEEP_DAYS = 15
+KEEP_DAYS = 10
 PLACE = "India"                   # change this, or read it from profile["location"] later
 
 # Hard cap of API calls per source per UTC day, whatever the titles are. Override in .env.
@@ -169,9 +169,10 @@ def fetch_adzuna(what: str = "developer", pages: tuple = (1,)) -> list[dict]:
     for page in pages:
         # errors propagate to fetch_for_titles, which decides whether the day's claim is kept
         data = _get(
-            f"https://api.adzuna.com/v1/api/jobs/in/search/{page}",
-            params={"app_id": app_id, "app_key": app_key, "results_per_page": 50,
-                    "what": what, "content-type": "application/json"},
+        f"https://api.adzuna.com/v1/api/jobs/in/search/{page}",
+        params={"app_id": app_id, "app_key": app_key, "results_per_page": 50,
+            "what": what, "sort_by": "date", "max_days_old": 14,
+            "content-type": "application/json"},
         )
         for j in data.get("results", []):
             try:
@@ -247,7 +248,7 @@ def _store(db, rows: list[dict]) -> int:
 SOURCES = {
     "adzuna": (
         lambda: bool(config.get("ADZUNA_APP_ID") and config.get("ADZUNA_APP_KEY")),
-        lambda title: fetch_adzuna(title),
+        lambda title: fetch_adzuna(title, pages=(1, 2)),
     ),
     "jsearch": (
         lambda: bool(config.get("OPENWEBNINJA_API_KEY")),
@@ -337,7 +338,8 @@ def _demand_titles(db, limit: int = 12) -> list[tuple[str, str | None]]:
     for prof in db.query(UserProfile).all():
         eff = effective_profile(prof)
         if eff:
-            counts[(eff["titles"][0].lower().strip(), eff["domain"])] += 1
+            for t in eff["titles"][:2]:
+                counts[(t.lower().strip(), eff["domain"])] += 1
     return [pair for pair, _ in counts.most_common(limit)]
 
 
